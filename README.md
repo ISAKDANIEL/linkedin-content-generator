@@ -1,1 +1,1 @@
-# linkedin-content-generator
+# LinkedIn Content Generator

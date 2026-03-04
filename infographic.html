@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LinkedIn Content Generator – Infographic</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #e8f0f7;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .infographic {
+    width: 820px;
+    background: #ddeeff;
+    border-radius: 16px;
+    padding: 40px 30px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .header h1 {
+    font-size: 32px;
+    font-weight: 900;
+    color: #0d1b2a;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    line-height: 1.2;
+  }
+  .header .highlight {
+    display: inline-block;
+    background: linear-gradient(135deg, #e040fb, #7c4dff);
+    color: white;
+    padding: 6px 28px;
+    border-radius: 6px;
+    font-size: 28px;
+    font-weight: 900;
+    text-transform: uppercase;
+    margin-top: 6px;
+    letter-spacing: 2px;
+  }
+
+  /* ── ROWS ── */
+  .row {
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 10px;
+    gap: 10px;
+  }
+
+  /* info boxes */
+  .info-box {
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 12.5px;
+    color: #1a1a2e;
+    line-height: 1.6;
+    border: 1.5px solid #c8d8e8;
+  }
+  .info-box .label {
+    font-weight: 700;
+    font-size: 12px;
+    color: #0d1b2a;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .info-box p {
+    font-size: 12px;
+    color: #333;
+    margin: 2px 0;
+  }
+  .info-box p::before { content: "→ "; color: #555; }
+  .info-box .note {
+    margin-top: 8px;
+    font-weight: 600;
+    font-size: 11.5px;
+    color: #1a1a2e;
+    line-height: 1.4;
+  }
+  .info-box .note::before { content: none; }
+
+  /* cylinder center */
+  .cylinder-wrap {
+    flex: 0 0 240px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .cylinder {
+    width: 240px;
+    border-radius: 50% / 18px;
+    padding: 18px 16px 22px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+  }
+  .cylinder::before {
+    content: '';
+    position: absolute;
+    top: -18px; left: 0; right: 0;
+    height: 36px;
+    border-radius: 50%;
+    background: inherit;
+    filter: brightness(1.15);
+  }
+  .cylinder .cyl-title {
+    font-size: 20px;
+    font-weight: 900;
+    color: white;
+    line-height: 1.2;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    position: relative;
+    z-index: 1;
+  }
+  .cylinder .cyl-sub {
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.92);
+    margin-top: 6px;
+    font-style: italic;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* cylinder colours */
+  .c1 { background: linear-gradient(160deg, #f06292, #e91e8c); }
+  .c2 { background: linear-gradient(160deg, #ff8a65, #f4511e); }
+  .c3 { background: linear-gradient(160deg, #ffd54f, #f9a825); }
+  .c4 { background: linear-gradient(160deg, #4dd0e1, #00838f); }
+  .c5 { background: linear-gradient(160deg, #64b5f6, #1565c0); }
+
+  /* footer */
+  .footer {
+    text-align: center;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 2px dashed #a9c4d8;
+    font-size: 13px;
+    color: #444;
+    font-weight: 600;
+  }
+  .footer .tagline {
+    font-size: 17px;
+    font-weight: 900;
+    color: #0d1b2a;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="infographic">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>The Executive's Guide to</h1>
+    <div class="highlight">LinkedIn Content Generator</div>
+  </div>
+
+  <!-- ROW 1 -->
+  <div class="row">
+    <div class="info-box">
+      <div class="label">Use cases</div>
+      <p>Craft scroll-stopping opening lines</p>
+      <p>Match tone to target persona</p>
+      <div class="label" style="margin-top:8px">What it needs</div>
+      <p>Post topic or title as input</p>
+      <p>Audience selection (optional)</p>
+    </div>
+    <div class="cylinder-wrap">
+      <div class="cylinder c1">
+        <div class="cyl-title">Hook Generator</div>
+        <div class="cyl-sub">Grabs attention in 2 seconds.</div>
+      </div>
+    </div>
+    <div class="info-box">
+      <div class="label">Key Results</div>
+      <p>3× more profile clicks</p>
+      <p>Stops mid-scroll behaviour</p>
+      <div class="note">First line = everything.<br>Make it land or lose them forever.</div>
+    </div>
+  </div>
+
+  <!-- ROW 2 -->
+  <div class="row">
+    <div class="info-box">
+      <div class="label">Use cases</div>
+      <p>Full LinkedIn post draft in seconds</p>
+      <p>Professional storytelling at scale</p>
+      <div class="label" style="margin-top:8px">What it needs</div>
+      <p>Strong topic + tone selection</p>
+      <p>OpenAI API integration</p>
+    </div>
+    <div class="cylinder-wrap">
+      <div class="cylinder c2">
+        <div class="cyl-title">AI Post Writer</div>
+        <div class="cyl-sub">Viral-ready content, instantly.</div>
+      </div>
+    </div>
+    <div class="info-box">
+      <div class="label">Key Results</div>
+      <p>90% writing time saved</p>
+      <p>Zero writer's block ever again</p>
+      <div class="note">High leverage tool.<br>Use as a co-writer, not a crutch.</div>
+    </div>
+  </div>
+
+  <!-- ROW 3 -->
+  <div class="row">
+    <div class="info-box">
+      <div class="label">Use cases</div>
+      <p>AI image matched to your post</p>
+      <p>Trending visual style generation</p>
+      <div class="label" style="margin-top:8px">What it needs</div>
+      <p>DALL·E 3 API connection</p>
+      <p>Topic keyword from the post</p>
+    </div>
+    <div class="cylinder-wrap">
+      <div class="cylinder c3">
+        <div class="cyl-title">Image Creator</div>
+        <div class="cyl-sub">Trending visuals, auto-generated.</div>
+      </div>
+    </div>
+    <div class="info-box">
+      <div class="label">Key Results</div>
+      <p>Premium look, no designer needed</p>
+      <p>Visually consistent personal brand</p>
+      <div class="note">Powerful but API-dependent.<br>Ensure your key is active & funded.</div>
+    </div>
+  </div>
+
+  <!-- ROW 4 -->
+  <div class="row">
+    <div class="info-box">
+      <div class="label">Use cases</div>
+      <p>Predict best hashtags per post</p>
+      <p>Industry niche targeting</p>
+      <div class="label" style="margin-top:8px">What it needs</div>
+      <p>Post content analysis</p>
+      <p>Ongoing LinkedIn trend data</p>
+    </div>
+    <div class="cylinder-wrap">
+      <div class="cylinder c4">
+        <div class="cyl-title">Hashtag Engine</div>
+        <div class="cyl-sub">Algorithm-optimised tagging.</div>
+      </div>
+    </div>
+    <div class="info-box">
+      <div class="label">Key Results</div>
+      <p>Maximum post discoverability</p>
+      <p>Reach right audience, right time</p>
+      <div class="note">Proven high ROI.<br>Less exciting than AI, but essential.</div>
+    </div>
+  </div>
+
+  <!-- ROW 5 -->
+  <div class="row">
+    <div class="info-box">
+      <div class="label">Use cases</div>
+      <p>Choose tone: Bold / Professional</p>
+      <p>Audience targeting controls</p>
+      <div class="label" style="margin-top:8px">What it needs</div>
+      <p>Clear user profile settings</p>
+      <p>Consistent brand guidelines</p>
+    </div>
+    <div class="cylinder-wrap">
+      <div class="cylinder c5">
+        <div class="cyl-title">Tone Selector</div>
+        <div class="cyl-sub">Your voice. Every time.</div>
+      </div>
+    </div>
+    <div class="info-box">
+      <div class="label">Key Results</div>
+      <p>Authentic personal brand intact</p>
+      <p>No "AI-sounding" generic posts</p>
+      <div class="note">Start here for certainty.<br>Tone first, everything else follows.</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    Built with React + Flask + OpenAI
+    <div class="tagline">"We don't just write posts. We engineer LinkedIn moments." 🚀</div>
+  </div>
+
+</div>
+</body>
+</html>

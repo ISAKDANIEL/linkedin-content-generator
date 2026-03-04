@@ -1,0 +1,10 @@
+flask
+flask-cors
+python-dotenv
+openai
+supabase
+PyJWT
+bcrypt
+google-auth
+google-auth-oauthlib
+requests
