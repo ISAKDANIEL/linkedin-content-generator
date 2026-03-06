@@ -20,7 +20,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.6 }}
                 className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto bg-white/80 backdrop-blur-md sticky top-0 z-50 rounded-b-2xl border-b border-slate-200 shadow-sm"
             >
-                <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/logo')}>
+                <div className="flex items-center gap-2">
                     <Logo size="small" />
                     <span className="font-bold text-xl tracking-tight text-slate-900">LinkedIn Content Generator</span>
                 </div>

@@ -1,0 +1,13 @@
+[Unit]
+Description=Gunicorn instance to serve LinkedIn Content Generator
+After=network.target
+
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/var/www/linkedin-generator/backend
+Environment="PATH=/var/www/linkedin-generator/backend/venv/bin"
+ExecStart=/var/www/linkedin-generator/backend/venv/bin/gunicorn --workers 3 --timeout 120 --bind localhost:5000 --access-logfile - --error-logfile - app:app
+
+[Install]
+WantedBy=multi-user.target

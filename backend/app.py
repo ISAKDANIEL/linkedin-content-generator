@@ -19,6 +19,10 @@ allowed_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:5174",
+    "http://makepost.pro",
+    "https://makepost.pro",
+    "http://www.makepost.pro",
+    "https://www.makepost.pro"
 ]
 
 CORS(app, resources={r"/*": {"origins": allowed_origins}},
@@ -73,8 +77,17 @@ def health_check():
 # ── Image Download Proxy ────────────────────────────────────────────────────────
 # DALL-E URLs are on OpenAI CDN with CORS restrictions — proxy through backend
 import requests as req_lib
-from flask import send_file, Response
+from flask import send_file, Response, send_from_directory
 import io
+
+# Path to saved PNG images (saved by openai_service)
+STATIC_IMAGES_DIR = os.path.join(os.path.dirname(__file__), 'static', 'images')
+os.makedirs(STATIC_IMAGES_DIR, exist_ok=True)
+
+@app.route("/api/images/<path:filename>", methods=["GET"])
+def serve_image(filename):
+    """Serve a locally-saved infographic PNG image."""
+    return send_from_directory(STATIC_IMAGES_DIR, filename)
 
 @app.route("/api/download-image", methods=["GET"])
 def download_image_proxy():

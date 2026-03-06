@@ -7,7 +7,6 @@ __pycache__/
 env/
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -33,11 +32,14 @@ instance/
 node_modules/
 dist-ssr
 *.local
+frontend/dist/
 
-# Environment variables
+# Environment variables (NEVER commit secrets)
 .env
 .env.local
 .env.*.local
+backend/.env
+backend.env
 
 # IDEs
 .vscode/
@@ -48,3 +50,11 @@ dist-ssr
 # OS
 .DS_Store
 Thumbs.db
+
+# Large files & build artifacts
+*.zip
+*.tar.gz
+project.zip
+source.zip
+frontend_dist.zip
+server_logs.txt

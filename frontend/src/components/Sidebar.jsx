@@ -80,7 +80,7 @@ export default function Sidebar({ onNewPost, onSelectHistory, currentHistoryId }
             </button>
 
             {/* Logo */}
-            <div className="px-4 py-5 border-b border-slate-100 flex items-center gap-3 overflow-hidden cursor-pointer group" onClick={() => navigate('/logo')}>
+            <div className="px-4 py-5 border-b border-slate-100 flex items-center gap-3 overflow-hidden group">
                 <Logo size="small" className="flex-shrink-0" />
                 <AnimatePresence>
                     {!collapsed && (

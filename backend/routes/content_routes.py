@@ -27,6 +27,7 @@ def generate_content(current_user):
         user_id = current_user.get("sub") if current_user else None
 
         # Save to history if authenticated
+        # The image is now a server URL (/api/images/xxx.png), not base64, so it's safe to store.
         if user_id:
             save_history(user_id, title, tone, audience, content_data)
 

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+export const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 
 function getToken() {
     return localStorage.getItem('ucc_token');
@@ -11,7 +11,7 @@ function authHeaders() {
     return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
-const api = axios.create({ baseURL: BASE });
+const api = axios.create({ baseURL: API_BASE });
 
 // ── Auth API ──────────────────────────────────────────────────────────────────
 function throwApiError(err) {

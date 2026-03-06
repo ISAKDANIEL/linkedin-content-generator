@@ -1,7 +1,13 @@
 import os
 import json
 import base64
+import uuid
+import re
 from openai import OpenAI
+
+# Directory to save generated PNG images (served as static files)
+IMAGES_DIR = os.path.join(os.path.dirname(__file__), '..', 'static', 'images')
+os.makedirs(IMAGES_DIR, exist_ok=True)
 
 # Initialize client only if key is present
 client = None
@@ -90,7 +96,14 @@ CRITICAL RULES:
         )
         b64_data = response.data[0].b64_json
         if b64_data:
-            return f"data:image/png;base64,{b64_data}"
+            # Save base64 image as a PNG file on disk
+            safe_title = re.sub(r'[^a-zA-Z0-9_-]', '_', title)[:40]
+            filename = f"{safe_title}_{uuid.uuid4().hex[:8]}.png"
+            filepath = os.path.join(IMAGES_DIR, filename)
+            with open(filepath, 'wb') as f:
+                f.write(base64.b64decode(b64_data))
+            # Return a server-accessible URL (served by Flask/Nginx)
+            return f"/api/images/{filename}"
         return response.data[0].url
     except Exception as e:
         print(f"Image generation error: {e}")
@@ -110,9 +123,9 @@ def generate_linkedin_post(title, tone, audience, style='Whiteboard'):
         Return a JSON object with EXACTLY this structure:
         {{
             "hook": "A single catchy opening sentence",
-            "body": "Full body with 3-5 key points, each on a new line starting with an emoji",
+            "body": "Full body with 5-7 key points, each on a new line starting with an emoji",
             "cta": "A call to action sentence",
-            "hashtags": ["#Tag1", "#Tag2", "#Tag3", "#Tag4", "#Tag5"],
+            "hashtags": ["#Tag1", "#Tag2", "#Tag3", "#Tag4", "#Tag5", "#Tag6", "#Tag7"],
             "infographic": {{
                 "title": "Main title for the infographic (short, 3-6 words)",
                 "subtitle": "A short tagline or description for the infographic",
@@ -123,20 +136,22 @@ def generate_linkedin_post(title, tone, audience, style='Whiteboard'):
                         "color": "#hex_color",
                         "icon": "emoji",
                         "nodes": [
-                            {{"label": "Key point or fact", "sublabel": "brief explanation in 5-8 words"}},
-                            {{"label": "Key point or fact", "sublabel": "brief explanation in 5-8 words"}},
-                            {{"label": "Key point or fact", "sublabel": "brief explanation in 5-8 words"}}
+                            {{"label": "Key point or fact", "sublabel": "detailed explanation in 8-12 words"}},
+                            {{"label": "Key point or fact", "sublabel": "detailed explanation in 8-12 words"}},
+                            {{"label": "Key point or fact", "sublabel": "detailed explanation in 8-12 words"}},
+                            {{"label": "Key point or fact", "sublabel": "detailed explanation in 8-12 words"}}
                         ]
                     }}
                 ]
             }}
         }}
 
-        Create 4-5 categories to cover the most important aspects of '{title}'.
+        Create 5-6 categories to cover the most important aspects of '{title}'.
         Each category should have 3-4 nodes.
         Use varied, vibrant hex colors for each category.
         Use relevant emojis for icons.
-        The infographic data should be educational, accurate, and informative.
+        The infographic data should be educational, accurate, and highly informative.
+        Make the content comprehensive and deep.
         """
 
         completion = client.chat.completions.create(

@@ -3,41 +3,56 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Wand2, Loader2, Copy, RefreshCw, Download, Check, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
-import { generateContent, historyAPI } from '../services/api';
+import { generateContent, historyAPI, API_BASE } from '../services/api';
 import Logo from '../components/ui/Logo';
 import { useNavigate } from 'react-router-dom';
 
 // ── Download AI Image ──────────────────────────────────────────────────────────
 async function downloadAIImage(imageUrl, title) {
     if (!imageUrl) { toast.error('No AI image to download'); return; }
-    const filename = `${title || 'infographic'}.png`;
+    // Sanitize filename for download
+    const safeTitle = (title || 'infographic').replace(/[^a-z0-9_\- ]/gi, '_').trim();
+    const filename = `${safeTitle}.png`;
+
     try {
         toast.loading('Preparing download...', { id: 'dl' });
 
-        // gpt-image-1 returns base64 data URLs — download directly in browser
+        let blob;
+        // 1. If it's a base64 data URL, convert it directly to a Blob
         if (imageUrl.startsWith('data:')) {
-            const a = document.createElement('a');
-            a.href = imageUrl;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            toast.success('Image downloaded!', { id: 'dl' });
-            return;
+            const res = await fetch(imageUrl);
+            blob = await res.blob();
+        }
+        // 2. If it's a server-relative path (/api/images/...), prepend the API base
+        else if (imageUrl.startsWith('/')) {
+            const fullUrl = `${API_BASE}${imageUrl}`;
+            const response = await fetch(fullUrl);
+            if (!response.ok) throw new Error('Download failed');
+            blob = await response.blob();
+        }
+        // 3. If it's a full CDN URL, use the proxy to avoid CORS
+        else {
+            const proxyUrl = `${API_BASE}/api/download-image?url=${encodeURIComponent(imageUrl)}&filename=${encodeURIComponent(filename)}`;
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error('Download failed');
+            blob = await response.blob();
         }
 
-        // dall-e-3 returns CDN URLs — use backend proxy to bypass CORS
-        const proxyUrl = `http://localhost:5000/api/download-image?url=${encodeURIComponent(imageUrl)}&filename=${encodeURIComponent(filename)}`;
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('Download failed');
-        const blob = await response.blob();
+        // 4. Trigger robust browser download with descriptive PNG filename
         const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = blobUrl; a.download = filename;
-        document.body.appendChild(a); a.click();
-        document.body.removeChild(a); URL.revokeObjectURL(blobUrl);
-        toast.success('Image downloaded!', { id: 'dl' });
-    } catch { toast.error('Download failed — try right-clicking the image to save', { id: 'dl' }); }
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+
+        toast.success(`Downloaded as "${filename}"!`, { id: 'dl' });
+    } catch (err) {
+        console.error('Download error:', err);
+        toast.error('Download failed — try right-clicking the image to save', { id: 'dl' });
+    }
 }
 
 
@@ -215,6 +230,7 @@ export default function GeneratorPage() {
     const [formData, setFormData] = useState({ title: '', tone: 'Professional', audience: '' });
     const [infographicStyle, setInfographicStyle] = useState('Whiteboard');
     const [showPostDetails, setShowPostDetails] = useState(true);
+    const [showStyles, setShowStyles] = useState(false);
     const [result, setResult] = useState(null);
 
     const STYLES = [
@@ -234,6 +250,52 @@ export default function GeneratorPage() {
         } catch { toast.error('Could not load history item'); }
     }, []);
 
+    const copyToClipboard = () => {
+        if (!result) return;
+        const c = result.content || result;
+        const fullText = `
+${c.hook || ''}
+
+${c.body || ''}
+
+${c.cta || ''}
+
+${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' + t : t).join(' ')}
+        `.trim();
+
+        // Modern approach (HTTPS only)
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(fullText).then(() => {
+                setCopied(true);
+                toast.success('Post copied!');
+                setTimeout(() => setCopied(false), 2000);
+            }).catch(err => {
+                console.error('Copy failed', err);
+                toast.error('Failed to copy text');
+            });
+        } else {
+            // Fallback for HTTP (like http://makepost.pro)
+            const textArea = document.createElement("textarea");
+            textArea.value = fullText;
+            // Move it off-screen
+            textArea.style.position = "absolute";
+            textArea.style.left = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                setCopied(true);
+                toast.success('Post copied!');
+                setTimeout(() => setCopied(false), 2000);
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+                toast.error('Failed to copy text');
+            }
+            document.body.removeChild(textArea);
+        }
+    };
+
     const handleSubmit = async (e) => {
         if (e?.preventDefault) e.preventDefault();
         if (!formData.title.trim()) { toast.error('Please enter a topic'); return; }
@@ -247,15 +309,6 @@ export default function GeneratorPage() {
             } else { toast.error('Generation failed — check the backend.'); }
         } catch (err) { toast.error(err.message || 'Failed to connect to backend.'); }
         finally { setLoading(false); }
-    };
-
-    const copyToClipboard = () => {
-        if (!result) return;
-        const c = result.content;
-        const text = `${c.hook}\n\n${c.body}\n\n${c.cta}\n\n${c.hashtags?.join(' ')}`;
-        navigator.clipboard.writeText(text);
-        setCopied(true); toast.success('Copied!');
-        setTimeout(() => setCopied(false), 2500);
     };
 
     const handleNewPost = () => {
@@ -275,7 +328,7 @@ export default function GeneratorPage() {
                     {/* Header */}
                     <div style={{ marginBottom: 26 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-                            <Logo size="small" className="cursor-pointer" onClick={() => navigate('/logo')} />
+                            <Logo size="small" />
                             <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>LinkedIn Content Generator</h1>
                         </div>
                         <p style={{ color: '#64748b', fontSize: 13, margin: 0, paddingLeft: 46 }}>
@@ -383,69 +436,61 @@ export default function GeneratorPage() {
 
                                         {/* 1. TOP: AI IMAGE & DOWNLOAD */}
                                         {c?.infographic_image_url && (
-                                            <div style={{ marginBottom: 32, textAlign: 'center' }}>
-                                                <div style={{ position: 'relative', display: 'inline-block', maxWidth: '85%' }}>
+                                            <div style={{ marginBottom: 48, textAlign: 'center' }}>
+                                                <div style={{ position: 'relative', display: 'inline-block', maxWidth: '90%' }}>
+                                                    <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
+                                                        <Sparkles size={24} color="#c54444" />
+                                                        <h2 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase', letterSpacing: 1.5 }}>AI-Generated Visual</h2>
+                                                    </div>
                                                     <img src={c.infographic_image_url} alt="AI Infographic"
-                                                        style={{ width: '100%', borderRadius: 20, boxShadow: '0 12px 40px rgba(0,0,0,0.15)', border: '1px solid #f8e6e6' }}
+                                                        style={{ width: '100%', borderRadius: 24, boxShadow: '0 20px 50px rgba(0,0,0,0.18)', border: '1px solid #f8e6e6' }}
                                                     />
-                                                    <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
+                                                    <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center' }}>
                                                         <button onClick={() => downloadAIImage(c?.infographic_image_url, formData.title)}
-                                                            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 28px', borderRadius: 16, border: 'none', background: 'linear-gradient(135deg,#c54444,#a82c2c)', color: 'white', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 6px 20px rgba(197,68,68,0.35)', transition: 'transform 0.2s' }}
-                                                            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                                            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 36px', borderRadius: 20, border: 'none', background: 'linear-gradient(135deg,#c54444,#a82c2c)', color: 'white', fontSize: 16, fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 25px rgba(197,68,68,0.4)', transition: 'all 0.3s' }}
+                                                            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-3px)'}
                                                             onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
                                                         >
-                                                            <Download size={20} /> Download Infographic Image
+                                                            <Download size={22} /> Download High-Res Image
                                                         </button>
                                                     </div>
                                                 </div>
                                             </div>
                                         )}
 
-                                        {/* 2. MIDDLE & BOTTOM: FULL WIDTH VERTICAL STACK */}
-                                        {/* 2. MIDDLE & BOTTOM: FULL WIDTH VIBRANT STACK */}
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 36, maxWidth: 1000, margin: '0 auto' }}>
+                                        {/* 3. BOTTOM: CLEAN TEXTUAL FLOW */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 32, maxWidth: 800, margin: '0 auto' }}>
 
-                                            {/* Post Content Wrapper - More Colorful */}
-                                            <div style={{ width: '100%', borderRadius: 24, border: '1px solid #eef2f6', backgroundColor: 'white', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
-                                                <div style={{ background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', padding: '18px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <span style={{ fontSize: 15, fontWeight: 900, color: 'white', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 10 }}>✍️ Dynamic Post Content</span>
-                                                    <button onClick={copyToClipboard} style={{ background: 'rgba(255,255,255,0.22)', border: 'none', padding: '10px 20px', borderRadius: 12, color: 'white', fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.22)'}>
-                                                        {copied ? <Check size={18} /> : <Copy size={18} />} {copied ? 'Copied' : 'Copy All'}
-                                                    </button>
-                                                </div>
-                                                <div style={{ padding: '0 32px 32px' }}>
-                                                    <div style={{ marginBottom: 32 }}>
-                                                        <p style={{ fontSize: 13, fontWeight: 900, color: '#b45309', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.2 }}>⚡ Magnetic Hook</p>
-                                                        <p style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0, lineHeight: 1.6 }}>{c?.hook}</p>
-                                                    </div>
-                                                    <div style={{ marginBottom: 32 }}>
-                                                        <p style={{ fontSize: 13, fontWeight: 900, color: '#1d4ed8', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.2 }}>💬 High-Value Body</p>
-                                                        <p style={{ fontSize: 16, color: '#334155', margin: 0, lineHeight: 1.9, whiteSpace: 'pre-wrap', fontWeight: 400 }}>{c?.body}</p>
-                                                    </div>
-                                                    <div style={{ marginBottom: 8 }}>
-                                                        <p style={{ fontSize: 13, fontWeight: 900, color: '#047857', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.2 }}>🎯 Conversion CTA</p>
-                                                        <p style={{ fontSize: 16, fontStyle: 'italic', color: '#0f172a', margin: 0, lineHeight: 1.6, fontWeight: 600 }}>{c?.cta}</p>
-                                                    </div>
-                                                </div>
+                                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: -16 }}>
+                                                <button onClick={copyToClipboard} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '10px 20px', borderRadius: 12, color: '#475569', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }} onMouseOver={e => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.color = '#0f172a' }} onMouseOut={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#475569' }}>
+                                                    {copied ? <Check size={18} color="#10b981" /> : <Copy size={18} />} {copied ? 'Copied' : 'Copy Full Post'}
+                                                </button>
                                             </div>
 
-                                            {/* Hashtags Card - Colorful */}
+                                            <div style={{ padding: '0 0 24px', borderBottom: '1px solid #e2e8f0' }}>
+                                                <p style={{ fontSize: 13, fontWeight: 800, color: '#b45309', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><span>⚡</span> The Hook</p>
+                                                <p style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, lineHeight: 1.4, letterSpacing: '-0.02em' }}>{c?.hook}</p>
+                                            </div>
+
+                                            <div style={{ padding: '0 0 24px', borderBottom: '1px solid #e2e8f0' }}>
+                                                <p style={{ fontSize: 13, fontWeight: 800, color: '#1d4ed8', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><span>💬</span> High-Value Breakdown</p>
+                                                <p style={{ fontSize: 17, color: '#334155', margin: 0, lineHeight: 1.8, whiteSpace: 'pre-wrap', fontWeight: 400 }}>{c?.body}</p>
+                                            </div>
+
+                                            <div style={{ padding: '0 0 24px' }}>
+                                                <p style={{ fontSize: 13, fontWeight: 800, color: '#047857', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><span>🎯</span> Conversion CTA</p>
+                                                <p style={{ fontSize: 18, fontStyle: 'italic', color: '#0f172a', margin: 0, lineHeight: 1.6, fontWeight: 700 }}>{c?.cta}</p>
+                                            </div>
+
                                             {c?.hashtags?.length > 0 && (
-                                                <div style={{ padding: 28, borderRadius: 24, border: '1px solid #eef2f6', background: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
-                                                    <p style={{ fontSize: 13, fontWeight: 900, color: '#6366f1', margin: '0 0 20px', textTransform: 'uppercase', letterSpacing: 1.5 }}>🏷️ AI-Optimized Hashtags</p>
-                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-                                                        {c.hashtags.map((tag, i) => {
-                                                            const tagColors = [
-                                                                { bg: '#e0e7ff', text: '#4338ca', border: '#c7d2fe' },
-                                                                { bg: '#fef3c7', text: '#b45309', border: '#fde68a' },
-                                                                { bg: '#dcfce7', text: '#15803d', border: '#bbf7d0' },
-                                                                { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' }
-                                                            ];
-                                                            const color = tagColors[i % tagColors.length];
-                                                            return (
-                                                                <span key={i} style={{ padding: '10px 22px', borderRadius: 24, background: color.bg, color: color.text, fontSize: 14, fontWeight: 800, border: `1px solid ${color.border}`, boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>{tag}</span>
-                                                            );
-                                                        })}
+                                                <div style={{ paddingTop: 8 }}>
+                                                    <p style={{ fontSize: 13, fontWeight: 800, color: '#6366f1', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><span>🏷️</span> AI-Optimized Hashtags</p>
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                                                        {c.hashtags.map((tag, i) => (
+                                                            <span key={i} style={{ padding: '6px 16px', borderRadius: 20, background: '#f1f5f9', color: '#475569', fontSize: 14, fontWeight: 700 }}>
+                                                                {typeof tag === 'string' && !tag.startsWith('#') ? '#' + tag : tag}
+                                                            </span>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             )}

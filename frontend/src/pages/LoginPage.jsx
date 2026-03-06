@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
 import Logo from '../components/ui/Logo';
 
-const BACKEND = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const BACKEND = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 
 export default function LoginPage() {
     const [mode, setMode] = useState('login'); // 'login' | 'register'
@@ -104,7 +104,7 @@ export default function LoginPage() {
             >
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center gap-3 mb-4 cursor-pointer justify-center w-full group" onClick={() => navigate('/logo')}>
+                    <div className="inline-flex items-center gap-3 mb-4 justify-center w-full group">
                         <Logo size="medium" />
                         <span className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">LinkedIn Content Generator</span>
                     </div>
@@ -150,21 +150,25 @@ export default function LoginPage() {
                         <AnimatePresence>
                             {mode === 'register' && (
                                 <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="overflow-hidden"
+                                    initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                                    animate={{ opacity: 1, height: 'auto', overflow: 'visible' }}
+                                    exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                                    transition={{ duration: 0.2 }}
                                 >
-                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name</label>
-                                    <div className="relative">
-                                        <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="Your name"
-                                            value={form.name}
-                                            onChange={e => setForm({ ...form, name: e.target.value })}
-                                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all text-sm"
-                                        />
+                                    <div className="pb-1">
+                                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name</label>
+                                        <div className="relative">
+                                            <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                name="name"
+                                                autoComplete="name"
+                                                placeholder="Your name"
+                                                value={form.name}
+                                                onChange={e => setForm({ ...form, name: e.target.value })}
+                                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all text-sm"
+                                            />
+                                        </div>
                                     </div>
                                 </motion.div>
                             )}
