@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, FileText, BarChart2, Hash, Zap, ChevronDown, LogIn } from 'lucide-react';
+import { ArrowRight, FileText, BarChart2, Hash, Zap, ChevronDown, LogIn, Linkedin, Twitter, Facebook, Instagram, MessageSquare, Mail, Youtube } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/ui/Logo';
@@ -12,7 +12,20 @@ export default function LandingPage() {
     const goToApp = () => navigate(isAuthenticated ? '/generate' : '/login');
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans overflow-x-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-white via-rose-50 to-white text-slate-900 font-sans overflow-x-hidden">
+            <style>{`
+                @keyframes marquee {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-50%); }
+                }
+                .animate-marquee {
+                    animation: marquee 35s linear infinite;
+                }
+                .hover-pause:hover .animate-marquee {
+                    animation-play-state: paused;
+                }
+            `}</style>
+
             {/* ── Navbar ── */}
             <motion.nav
                 initial={{ opacity: 0, y: -20 }}
@@ -21,8 +34,7 @@ export default function LandingPage() {
                 className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto bg-white/80 backdrop-blur-md sticky top-0 z-50 rounded-b-2xl border-b border-slate-200 shadow-sm"
             >
                 <div className="flex items-center gap-2">
-                    <Logo size="small" />
-                    <span className="font-bold text-xl tracking-tight text-slate-900">LinkedIn Content Generator</span>
+                    <Logo size="medium" />
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -36,7 +48,7 @@ export default function LandingPage() {
                     )}
                     <button
                         onClick={goToApp}
-                        className="text-sm font-semibold px-5 py-2.5 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-md hover:shadow-lg flex items-center gap-1.5"
+                        className="text-sm font-semibold px-5 py-2.5 rounded-full bg-rose-800 text-white hover:bg-rose-900 transition-colors shadow-md hover:shadow-lg flex items-center gap-1.5"
                     >
                         {isAuthenticated ? 'Open App' : 'Get Started'} <ArrowRight size={15} />
                     </button>
@@ -45,15 +57,7 @@ export default function LandingPage() {
 
             {/* ── HERO ── */}
             <section className="relative flex flex-col items-center text-center px-6 pt-24 pb-20 max-w-5xl mx-auto">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-full mb-8 bg-indigo-50 border border-indigo-100 text-indigo-700 text-sm font-semibold shadow-sm"
-                >
-                    <Zap size={14} className="text-indigo-600" />
-                    Powered by GPT-4o — Built for Professionals
-                </motion.div>
+
 
                 <motion.h1
                     initial={{ opacity: 0, y: 20 }}
@@ -63,7 +67,7 @@ export default function LandingPage() {
                 >
                     Create Viral LinkedIn
                     <br />
-                    Content in <span className="text-indigo-600">Seconds</span>
+                    Content in <span className="text-rose-800">Seconds</span>
                 </motion.h1>
 
                 <motion.p
@@ -84,7 +88,7 @@ export default function LandingPage() {
                 >
                     <button
                         onClick={goToApp}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-indigo-600 text-white font-bold text-lg hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-rose-800 text-white font-bold text-lg hover:bg-rose-900 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                     >
                         {isAuthenticated ? 'Open App' : 'Start Creating Free'} <ArrowRight size={20} />
                     </button>
@@ -114,6 +118,36 @@ export default function LandingPage() {
                         </div>
                     ))}
                 </motion.div>
+
+                {/* ── PLATFORM MARQUEE ── */}
+                <div className="mt-24 w-full overflow-hidden relative max-w-6xl mx-auto hover-pause">
+                    {/* Gradient Fades for edges */}
+                    <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none" />
+                    <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none" />
+
+                    <div className="flex w-max animate-marquee items-center gap-6 py-4">
+                        {/* Duplicate the array twice for seamless infinite scroll */}
+                        {[...Array(2)].map((_, i) => (
+                            <div key={i} className="flex gap-6 items-center pr-6">
+                                {[
+                                    { name: 'LinkedIn', icon: <Linkedin size={26} color="#0077B5" /> },
+                                    { name: 'Twitter / X', icon: <Twitter size={26} color="#0f1419" /> },
+                                    { name: 'Facebook', icon: <Facebook size={26} color="#1877F2" /> },
+                                    { name: 'Instagram', icon: <Instagram size={26} color="#E4405F" /> },
+                                    { name: 'YouTube', icon: <Youtube size={26} color="#FF0000" /> },
+                                    { name: 'Medium', icon: <FileText size={26} color="#000000" /> },
+                                    { name: 'Reddit', icon: <MessageSquare size={26} color="#FF4500" /> },
+                                    { name: 'Substack', icon: <Mail size={26} color="#FF6719" /> },
+                                ].map((platform, j) => (
+                                    <div key={j} className="flex items-center gap-3 bg-white border border-slate-200 shadow-sm rounded-2xl px-6 py-4 cursor-default transition-transform hover:scale-105 hover:shadow-md">
+                                        {platform.icon}
+                                        <span className="font-extrabold text-slate-700 text-lg tracking-tight">{platform.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </section>
 
             {/* ── HOW IT WORKS ── */}
@@ -143,7 +177,7 @@ export default function LandingPage() {
                             transition={{ duration: 0.5, delay: i * 0.15 }}
                             className="flex-1 flex flex-col items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm w-full md:w-auto relative"
                         >
-                            <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-black mb-6 bg-indigo-600 text-white shadow-lg border-4 border-white md:-mt-14">
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-black mb-6 bg-rose-800 text-white shadow-lg border-4 border-white md:-mt-14">
                                 {item.step}
                             </div>
                             <h3 className="text-slate-900 font-bold text-xl mb-3">{item.title}</h3>
@@ -160,18 +194,18 @@ export default function LandingPage() {
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
-                    className="rounded-3xl p-12 bg-indigo-600 text-white shadow-2xl relative overflow-hidden"
+                    className="rounded-3xl p-12 bg-rose-800 text-white shadow-2xl relative overflow-hidden"
                 >
-                    <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-indigo-500 rounded-full opacity-50" />
-                    <div className="absolute bottom-[-50px] left-[-50px] w-64 h-64 bg-indigo-700 rounded-full opacity-50" />
+                    <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-rose-700 rounded-full opacity-50" />
+                    <div className="absolute bottom-[-50px] left-[-50px] w-64 h-64 bg-rose-900 rounded-full opacity-50" />
                     <div className="relative z-10">
                         <h2 className="text-4xl font-extrabold mb-6">Ready to go viral?</h2>
-                        <p className="text-indigo-100 mb-10 text-lg max-w-xl mx-auto">
-                            Join creators who use LinkedIn Content Generator to build their LinkedIn presence with high-quality, professional posts.
+                        <p className="text-rose-100 mb-10 text-lg max-w-xl mx-auto">
+                            Join creators who use Make Post to build their LinkedIn presence with high-quality, professional posts.
                         </p>
                         <button
                             onClick={goToApp}
-                            className="px-10 py-4 rounded-full bg-white text-indigo-700 font-bold text-lg hover:bg-indigo-50 transition-colors shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                            className="px-10 py-4 rounded-full bg-white text-rose-900 font-bold text-lg hover:bg-rose-50 transition-colors shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                         >
                             {isAuthenticated ? 'Open App →' : 'Create My First Post — Free'}
                         </button>
@@ -181,11 +215,9 @@ export default function LandingPage() {
 
             {/* ── Footer ── */}
             <footer className="bg-slate-900 text-slate-400 py-10 text-center text-sm border-t border-slate-800">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                    <Logo size="small" />
-                    <span className="font-bold text-white tracking-tight">LinkedIn Content Generator</span>
+                <div className="flex items-center justify-center gap-2">
+                    <Logo size="medium" />
                 </div>
-                <p>© 2026 LinkedIn Content Generator · Built with GPT-4o · React · Flask</p>
             </footer>
         </div>
     );

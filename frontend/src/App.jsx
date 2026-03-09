@@ -7,6 +7,8 @@ import LandingPage from './pages/LandingPage';
 import GeneratorPage from './pages/GeneratorPage';
 import LoginPage from './pages/LoginPage';
 import LogoPage from './pages/LogoPage';
+import PricingPage from './pages/PricingPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
 
 export default function App() {
   return (
@@ -30,6 +32,15 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/logo" element={<LogoPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route
+            path="/payment/success"
+            element={
+              <ProtectedRoute>
+                <PaymentSuccessPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/generate"
             element={

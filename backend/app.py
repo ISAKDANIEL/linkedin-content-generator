@@ -32,10 +32,12 @@ CORS(app, resources={r"/*": {"origins": allowed_origins}},
 from routes.auth_routes import auth_bp
 from routes.content_routes import content_bp
 from routes.history_routes import history_bp
+from routes.payment_routes import payment_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(content_bp)
 app.register_blueprint(history_bp)
+app.register_blueprint(payment_bp)
 
 # ── Legacy route (backward compat with old frontend) ──────────────────────────
 from services.openai_service import generate_linkedin_post

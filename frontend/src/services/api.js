@@ -54,7 +54,12 @@ export async function generateContent({ title, tone, audience, style }) {
         return res.data;
     } catch (err) {
         const msg = err.response?.data?.error || err.message;
-        throw new Error(msg);
+        const code = err.response?.data?.code;
+        const status = err.response?.status;
+        const error = new Error(msg);
+        error.status = status;
+        error.code = code;
+        throw error;
     }
 }
 
@@ -71,5 +76,33 @@ export const historyAPI = {
     async delete(id) {
         const res = await api.delete(`/api/history/${id}`, { headers: authHeaders() });
         return res.data;
+    },
+};
+
+// ── Payment & Credits API ──────────────────────────────────────────────────────
+export const paymentAPI = {
+    async getCredits() {
+        try {
+            const res = await api.get('/api/credits', { headers: authHeaders() });
+            return res.data;
+        } catch (err) { throwApiError(err); }
+    },
+    async createCheckout(product_id) {
+        try {
+            const res = await api.post('/api/payment/create-checkout', { product_id }, { headers: authHeaders() });
+            return res.data;
+        } catch (err) { throwApiError(err); }
+    },
+    async upiConfig() {
+        try {
+            const res = await api.get('/api/payment/upi-config');
+            return res.data;
+        } catch (err) { throwApiError(err); }
+    },
+    async upiSubmit(product_id, utr) {
+        try {
+            const res = await api.post('/api/payment/upi-submit', { product_id, utr }, { headers: authHeaders() });
+            return res.data;
+        } catch (err) { throwApiError(err); }
     },
 };

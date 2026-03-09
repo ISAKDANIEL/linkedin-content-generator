@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusCircle, Trash2, Clock, LogOut, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { PlusCircle, Trash2, Clock, LogOut, ChevronLeft, ChevronRight, Zap, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { historyAPI } from '../services/api';
+import { historyAPI, paymentAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import Logo from './ui/Logo';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +23,7 @@ export default function Sidebar({ onNewPost, onSelectHistory, currentHistoryId }
     const [collapsed, setCollapsed] = useState(false);
     const [loadingHistory, setLoadingHistory] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
+    const [credits, setCredits] = useState(null);
 
     const fetchHistory = useCallback(async () => {
         if (!isAuthenticated) return;
@@ -37,15 +38,26 @@ export default function Sidebar({ onNewPost, onSelectHistory, currentHistoryId }
         }
     }, [isAuthenticated]);
 
+    const fetchCredits = useCallback(async () => {
+        if (!isAuthenticated) return;
+        try {
+            const data = await paymentAPI.getCredits();
+            setCredits(data.credits ?? 0);
+        } catch {
+            // Silent fail
+        }
+    }, [isAuthenticated]);
+
     useEffect(() => {
         fetchHistory();
-    }, [fetchHistory]);
+        fetchCredits();
+    }, [fetchHistory, fetchCredits]);
 
-    // Expose refresh to parent
+    // Expose refresh to parent (also refreshes credits)
     useEffect(() => {
-        window.__refreshSidebar = fetchHistory;
+        window.__refreshSidebar = () => { fetchHistory(); fetchCredits(); };
         return () => { delete window.__refreshSidebar; };
-    }, [fetchHistory]);
+    }, [fetchHistory, fetchCredits]);
 
     const handleDelete = async (e, id) => {
         e.stopPropagation();
@@ -80,20 +92,8 @@ export default function Sidebar({ onNewPost, onSelectHistory, currentHistoryId }
             </button>
 
             {/* Logo */}
-            <div className="px-4 py-5 border-b border-slate-100 flex items-center gap-3 overflow-hidden group">
-                <Logo size="small" className="flex-shrink-0" />
-                <AnimatePresence>
-                    {!collapsed && (
-                        <motion.span
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10 }}
-                            className="font-bold text-slate-900 text-sm whitespace-nowrap overflow-hidden group-hover:text-indigo-600 transition-colors"
-                        >
-                            LinkedIn Content Generator
-                        </motion.span>
-                    )}
-                </AnimatePresence>
+            <div className="px-4 py-5 border-b border-slate-100 flex items-center justify-center gap-3 overflow-hidden group">
+                <Logo size="medium" className="flex-shrink-0" />
             </div>
 
             {/* New Post button */}
@@ -178,6 +178,40 @@ export default function Sidebar({ onNewPost, onSelectHistory, currentHistoryId }
                     ))}
                 </div>
             </div>
+
+            {/* Credits badge + Buy Credits */}
+            {!collapsed && (
+                <div className="px-3 pb-2">
+                    <div
+                        className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors"
+                        onClick={() => navigate('/pricing')}
+                        title="Buy more credits"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Zap size={15} className={credits === 0 ? 'text-red-500' : 'text-amber-500'} />
+                            <span className="text-xs font-semibold text-slate-700">
+                                {credits === null ? '…' : `${credits} credit${credits !== 1 ? 's' : ''}`}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs font-bold text-indigo-600">
+                            <ShoppingCart size={12} /> Buy
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Collapsed: just an icon */}
+            {collapsed && (
+                <div className="px-3 pb-2 flex justify-center">
+                    <button
+                        onClick={() => navigate('/pricing')}
+                        title="Buy credits"
+                        className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                    >
+                        <Zap size={16} className={credits === 0 ? 'text-red-500' : 'text-amber-500'} />
+                    </button>
+                </div>
+            )}
 
             {/* User profile + logout */}
             <div className="border-t border-slate-100 p-3">

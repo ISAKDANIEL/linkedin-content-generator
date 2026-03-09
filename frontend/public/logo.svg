@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 120" width="100%" height="100%">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="bubble" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a82c2c" />
+      <stop offset="100%" stop-color="#800000" />
+    </linearGradient>
+    <linearGradient id="textMake" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a82c2c" />
+      <stop offset="100%" stop-color="#800000" />
+    </linearGradient>
+    <linearGradient id="textPost" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#800000" />
+      <stop offset="100%" stop-color="#4d0000" />
+    </linearGradient>
+    <linearGradient id="pencilWood" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e0e0e0" />
+      <stop offset="100%" stop-color="#b0b0b0" />
+    </linearGradient>
+  </defs>
+
+  <!-- ICON GROUP -->
+  <g transform="translate(10, 15)">
+    <!-- Chat Bubble Body -->
+    <path d="M 45 0 C 85 0 100 20 100 45 C 100 70 85 85 45 85 C 30 85 20 80 15 75 L 5 95 L 15 70 C 5 60 0 50 0 35 C 0 10 15 0 45 0 Z" fill="url(#bubble)" />
+    
+    <!-- White Card Inside Bubble -->
+    <rect x="12" y="15" width="60" height="42" rx="4" fill="#ffffff" />
+    
+    <!-- Red Box on Card -->
+    <rect x="18" y="28" width="18" height="18" rx="3" fill="#a82c2c" />
+    <rect x="18" y="28" width="18" height="8" rx="2" fill="#800000" />
+    <text x="27" y="42" font-family="sans-serif" font-weight="bold" font-size="10" fill="#ffffff" text-anchor="middle">1</text>
+    
+    <!-- Top Dots -->
+    <circle cx="17" cy="21" r="1.5" fill="#cbd5e1" />
+    <circle cx="21" cy="21" r="1.5" fill="#94a3b8" />
+    <circle cx="25" cy="21" r="1.5" fill="#94a3b8" />
+
+    <!-- Blue Lines -->
+    <rect x="42" y="28" width="22" height="3" rx="1.5" fill="#cbd5e1" />
+    <rect x="42" y="34" width="22" height="3" rx="1.5" fill="#cbd5e1" />
+    <rect x="18" y="50" width="34" height="3" rx="1.5" fill="#cbd5e1" />
+
+    <!-- Red Heart Bubble -->
+    <path d="M 42 3 C 48 -2 55 -2 55 5 C 55 12 42 18 42 18 C 42 18 29 12 29 5 C 29 -2 36 -2 42 3 Z" fill="#a82c2c" />
+    <path d="M 42 7 C 45 4 48 4 48 8 C 48 11 42 14 42 14 C 42 14 36 11 36 8 C 36 4 39 4 42 7 Z" fill="#ffffff" />
+    <!-- Yellow Heart Bubble -->
+    <path d="M 54 8 C 58 5 63 5 63 10 C 63 15 54 20 54 20 C 54 20 45 15 45 10 C 45 5 50 5 54 8 Z" fill="#6a040f" />
+    <path d="M 54 11 C 56 9 58 9 58 12 C 58 14 54 16 54 16 C 54 16 50 14 50 12 C 50 9 52 9 54 11 Z" fill="#ffffff" />
+
+    <!-- Pencil diagonally crossing -->
+    <g transform="translate(68, 62) rotate(-50)">
+      <!-- Pencil Body -->
+      <rect x="-10" y="-45" width="20" height="60" rx="3" fill="url(#pencilWood)" />
+      <!-- Eraser -->
+      <path d="M -10 -45 L 10 -45 L 8 -55 A 4 4 0 0 0 -8 -55 Z" fill="#a82c2c" />
+      <rect x="-10" y="-45" width="20" height="5" fill="#cfd6e0" />
+      <rect x="-10" y="-43" width="20" height="1" fill="#a4b1c2" />
+      <!-- Tip Base -->
+      <polygon points="-8,15 8,15 0,35" fill="#f1f5f9" />
+      <polygon points="-3,27 3,27 0,35" fill="#475569" />
+      <!-- Left Highlights -->
+      <rect x="-8" y="-40" width="4" height="55" fill="rgba(255,255,255,0.4)" />
+    </g>
+  </g>
+
+  <!-- TEXT "Make Post" -->
+  <!-- We use standard web safe fonts but heavily stylized like the original -->
+  <text x="125" y="82" font-family="'Nunito', 'Segoe UI', 'Helvetica Rounded', Arial, sans-serif" font-weight="900" font-size="68" font-style="italic" letter-spacing="-3">
+    <tspan fill="url(#textMake)">Make </tspan>
+    <tspan fill="url(#textPost)">Post</tspan>
+  </text>
+</svg>

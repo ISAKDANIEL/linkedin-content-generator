@@ -30,6 +30,7 @@ def init_local_db():
             name TEXT,
             avatar_url TEXT,
             provider TEXT DEFAULT 'email',
+            credits INTEGER DEFAULT 3,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -42,7 +43,23 @@ def init_local_db():
             result TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS payments (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            payment_id TEXT UNIQUE NOT NULL,
+            product_id TEXT NOT NULL,
+            credits_added INTEGER NOT NULL,
+            status TEXT DEFAULT 'succeeded',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
     """)
+    # Migrate: add credits column to existing users table if absent
+    try:
+        cur.execute("ALTER TABLE users ADD COLUMN credits INTEGER DEFAULT 3")
+        conn.commit()
+    except Exception:
+        pass  # Column already exists
     conn.commit()
     conn.close()
     print("Local SQLite DB initialized (local_data.db)")
@@ -138,5 +155,66 @@ def local_delete_history(history_id: str, user_id: str) -> bool:
         )
         conn.commit()
         return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
+# ── Credits operations ────────────────────────────────────────────────────────
+def local_get_credits(user_id: str) -> int:
+    conn = _get_conn()
+    try:
+        row = conn.execute("SELECT credits FROM users WHERE id = ?", (user_id,)).fetchone()
+        return row["credits"] if row and row["credits"] is not None else 0
+    finally:
+        conn.close()
+
+
+def local_add_credits(user_id: str, amount: int) -> int:
+    """Add credits to user account. Returns new balance."""
+    conn = _get_conn()
+    try:
+        conn.execute(
+            "UPDATE users SET credits = COALESCE(credits, 0) + ? WHERE id = ?",
+            (amount, user_id)
+        )
+        conn.commit()
+        row = conn.execute("SELECT credits FROM users WHERE id = ?", (user_id,)).fetchone()
+        return row["credits"] if row else 0
+    finally:
+        conn.close()
+
+
+def local_deduct_credit(user_id: str) -> bool:
+    """Deduct 1 credit from user. Returns True if successful, False if insufficient."""
+    conn = _get_conn()
+    try:
+        row = conn.execute("SELECT credits FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not row or (row["credits"] or 0) < 1:
+            return False
+        conn.execute(
+            "UPDATE users SET credits = credits - 1 WHERE id = ? AND credits > 0",
+            (user_id,)
+        )
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+
+# ── Payment record operations ─────────────────────────────────────────────────
+def local_save_payment(user_id: str, payment_id: str, product_id: str, credits_added: int) -> bool:
+    """Record a completed payment. Returns False if already processed (idempotent)."""
+    pid = str(uuid.uuid4())
+    now = datetime.utcnow().isoformat()
+    conn = _get_conn()
+    try:
+        conn.execute(
+            "INSERT INTO payments (id, user_id, payment_id, product_id, credits_added, created_at) VALUES (?,?,?,?,?,?)",
+            (pid, user_id, payment_id, product_id, credits_added, now)
+        )
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False  # payment_id already processed
     finally:
         conn.close()

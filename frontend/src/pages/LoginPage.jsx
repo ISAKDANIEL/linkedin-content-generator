@@ -89,12 +89,63 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-violet-50 flex items-center justify-center p-4">
-            {/* Background blobs */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-200 rounded-full opacity-30 blur-3xl" />
-                <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-violet-200 rounded-full opacity-30 blur-3xl" />
+        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #fff1f1 0%, #fdf4ff 40%, #f0f4ff 100%)' }}>
+            {/* ── Animated Background ── */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {/* Orb 1 – top left */}
+                <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(197,68,68,0.18) 0%, transparent 70%)', animation: 'orbFloat1 8s ease-in-out infinite' }} />
+                {/* Orb 2 – bottom right */}
+                <div style={{ position: 'absolute', bottom: '-15%', right: '-10%', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.14) 0%, transparent 70%)', animation: 'orbFloat2 10s ease-in-out infinite' }} />
+                {/* Orb 3 – center top */}
+                <div style={{ position: 'absolute', top: '10%', right: '20%', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)', animation: 'orbFloat3 7s ease-in-out infinite' }} />
+                {/* Orb 4 – bottom left */}
+                <div style={{ position: 'absolute', bottom: '10%', left: '15%', width: 250, height: 250, borderRadius: '50%', background: 'radial-gradient(circle, rgba(197,68,68,0.1) 0%, transparent 70%)', animation: 'orbFloat1 9s ease-in-out infinite reverse' }} />
+                {/* Orb 5 – center */}
+                <div style={{ position: 'absolute', top: '40%', left: '40%', width: 350, height: 350, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.08) 0%, transparent 70%)', animation: 'orbFloat2 12s ease-in-out infinite reverse' }} />
+
+                {/* Floating rings */}
+                <div style={{ position: 'absolute', top: '20%', left: '8%', width: 80, height: 80, borderRadius: '50%', border: '2px solid rgba(197,68,68,0.15)', animation: 'ringFloat 6s ease-in-out infinite' }} />
+                <div style={{ position: 'absolute', bottom: '25%', right: '12%', width: 50, height: 50, borderRadius: '50%', border: '2px solid rgba(139,92,246,0.2)', animation: 'ringFloat 8s ease-in-out infinite reverse' }} />
+                <div style={{ position: 'absolute', top: '60%', left: '5%', width: 30, height: 30, borderRadius: '50%', border: '1.5px solid rgba(99,102,241,0.2)', animation: 'ringFloat 5s ease-in-out infinite' }} />
+                <div style={{ position: 'absolute', top: '15%', right: '8%', width: 60, height: 60, borderRadius: '50%', border: '1.5px solid rgba(197,68,68,0.12)', animation: 'ringFloat 7s ease-in-out infinite reverse' }} />
+
+                {/* Floating dots */}
+                {[
+                    { top: '25%', left: '20%', size: 6, color: 'rgba(197,68,68,0.3)', delay: '0s' },
+                    { top: '70%', left: '75%', size: 4, color: 'rgba(139,92,246,0.3)', delay: '1s' },
+                    { top: '45%', left: '88%', size: 5, color: 'rgba(99,102,241,0.25)', delay: '2s' },
+                    { top: '80%', left: '30%', size: 4, color: 'rgba(197,68,68,0.2)', delay: '0.5s' },
+                    { top: '10%', left: '55%', size: 6, color: 'rgba(139,92,246,0.2)', delay: '1.5s' },
+                ].map((dot, i) => (
+                    <div key={i} style={{ position: 'absolute', top: dot.top, left: dot.left, width: dot.size, height: dot.size, borderRadius: '50%', background: dot.color, animation: `dotPulse 3s ease-in-out infinite`, animationDelay: dot.delay }} />
+                ))}
             </div>
+
+            {/* CSS keyframes */}
+            <style>{`
+                @keyframes orbFloat1 {
+                    0%, 100% { transform: translate(0, 0) scale(1); }
+                    33% { transform: translate(30px, -20px) scale(1.05); }
+                    66% { transform: translate(-20px, 30px) scale(0.97); }
+                }
+                @keyframes orbFloat2 {
+                    0%, 100% { transform: translate(0, 0) scale(1); }
+                    33% { transform: translate(-25px, 20px) scale(1.04); }
+                    66% { transform: translate(20px, -30px) scale(0.96); }
+                }
+                @keyframes orbFloat3 {
+                    0%, 100% { transform: translate(0, 0) scale(1); }
+                    50% { transform: translate(15px, 25px) scale(1.06); }
+                }
+                @keyframes ringFloat {
+                    0%, 100% { transform: translateY(0px); opacity: 0.6; }
+                    50% { transform: translateY(-18px); opacity: 1; }
+                }
+                @keyframes dotPulse {
+                    0%, 100% { transform: scale(1); opacity: 0.6; }
+                    50% { transform: scale(1.8); opacity: 1; }
+                }
+            `}</style>
 
             <motion.div
                 initial={{ opacity: 0, y: 24 }}
@@ -106,7 +157,6 @@ export default function LoginPage() {
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center gap-3 mb-4 justify-center w-full group">
                         <Logo size="medium" />
-                        <span className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">LinkedIn Content Generator</span>
                     </div>
                     <h1 className="text-3xl font-extrabold text-slate-900">
                         {mode === 'login' ? 'Welcome back' : 'Create your account'}
@@ -180,7 +230,9 @@ export default function LoginPage() {
                                 <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                 <input
                                     type="email"
+                                    name="email"
                                     required
+                                    autoComplete="email"
                                     placeholder="you@example.com"
                                     value={form.email}
                                     onChange={e => setForm({ ...form, email: e.target.value })}
@@ -195,7 +247,9 @@ export default function LoginPage() {
                                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                 <input
                                     type={showPass ? 'text' : 'password'}
+                                    name="password"
                                     required
+                                    autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                                     placeholder={mode === 'register' ? 'At least 6 characters' : 'Your password'}
                                     value={form.password}
                                     onChange={e => setForm({ ...form, password: e.target.value })}

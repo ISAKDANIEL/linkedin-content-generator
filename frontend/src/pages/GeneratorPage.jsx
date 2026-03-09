@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wand2, Loader2, Copy, RefreshCw, Download, Check, Sparkles } from 'lucide-react';
+import { Wand2, Loader2, Copy, RefreshCw, Download, Check, Image, FileText, Palette, Zap, MessageSquare, Target, Hash, ChevronDown, ChevronUp, ShoppingCart } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
-import { generateContent, historyAPI, API_BASE } from '../services/api';
+import { generateContent, historyAPI, paymentAPI, API_BASE } from '../services/api';
 import Logo from '../components/ui/Logo';
 import { useNavigate } from 'react-router-dom';
 
@@ -95,7 +95,7 @@ function InfographicRenderer({ content, title }) {
                 <div style={{ position: 'absolute', inset: 0, opacity: 0.08, backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
                 <div style={{ position: 'relative', zIndex: 1 }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.12)', borderRadius: 30, padding: '4px 16px', marginBottom: 10 }}>
-                        <span style={{ fontSize: 12, color: '#e5a3a3', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>📊 AI Infographic</span>
+                        <span style={{ fontSize: 12, color: '#e5a3a3', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>AI Infographic</span>
                     </div>
                     <h1 style={{ fontSize: 22, fontWeight: 900, color: 'white', margin: '0 0 8px', lineHeight: 1.3, textTransform: 'uppercase', letterSpacing: 1 }}>
                         {infTitle}
@@ -231,13 +231,20 @@ export default function GeneratorPage() {
     const [infographicStyle, setInfographicStyle] = useState('Whiteboard');
     const [showPostDetails, setShowPostDetails] = useState(true);
     const [showStyles, setShowStyles] = useState(false);
+    const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
     const [result, setResult] = useState(null);
+    const [credits, setCredits] = useState(null);
+    const [noCreditsModal, setNoCreditsModal] = useState(false);
+
+    useEffect(() => {
+        paymentAPI.getCredits().then(d => setCredits(d?.credits ?? null)).catch(() => {});
+    }, []);
 
     const STYLES = [
-        { id: 'Whiteboard', label: 'Whiteboard Sketch', icon: '🎨', desc: 'Hand-drawn marker style' },
-        { id: 'Corporate Modern', label: 'Corporate Modern', icon: '🏢', desc: 'Clean, professional digital' },
-        { id: 'Executive Guide', label: 'Executive Guide', icon: '📊', desc: 'Stacked vibrant guide' },
-        { id: 'Handwritten Notes', label: 'Handwritten Notes', icon: '✍️', desc: 'Pen on notebook paper' },
+        { id: 'Whiteboard', label: 'Whiteboard Sketch', Icon: Palette, desc: 'Hand-drawn marker style' },
+        { id: 'Corporate Modern', label: 'Corporate Modern', Icon: FileText, desc: 'Clean, professional digital' },
+        { id: 'Executive Guide', label: 'Executive Guide', Icon: Zap, desc: 'Stacked vibrant guide' },
+        { id: 'Handwritten Notes', label: 'Handwritten Notes', Icon: MessageSquare, desc: 'Pen on notebook paper' },
     ];
 
     const loadHistoryItem = useCallback(async (id) => {
@@ -299,15 +306,34 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
     const handleSubmit = async (e) => {
         if (e?.preventDefault) e.preventDefault();
         if (!formData.title.trim()) { toast.error('Please enter a topic'); return; }
+
+        // Client-side credits check
+        if (credits !== null && credits < 1) {
+            setNoCreditsModal(true);
+            return;
+        }
+
         setLoading(true); setResult(null); setCurrentHistoryId(null);
         try {
             const response = await generateContent({ ...formData, style: infographicStyle });
             if (response?.status === 'success') {
                 setResult(response.data);
+                // Update credits from response
+                if (response.data?.credits_remaining !== undefined) {
+                    setCredits(response.data.credits_remaining);
+                }
                 window.__refreshSidebar?.();
                 toast.success('Infographic & content generated!');
             } else { toast.error('Generation failed — check the backend.'); }
-        } catch (err) { toast.error(err.message || 'Failed to connect to backend.'); }
+        } catch (err) {
+            // Handle no credits error from backend
+            if (err.message?.includes('no credits') || err.message?.includes('No credits') || err.status === 402) {
+                setCredits(0);
+                setNoCreditsModal(true);
+            } else {
+                toast.error(err.message || 'Failed to connect to backend.');
+            }
+        }
         finally { setLoading(false); }
     };
 
@@ -322,19 +348,62 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
         <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#eef2f7' }}>
             <Sidebar onNewPost={handleNewPost} onSelectHistory={loadHistoryItem} currentHistoryId={currentHistoryId} />
 
+            {/* No Credits Modal */}
+            <AnimatePresence>
+                {noCreditsModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+                            zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24
+                        }}
+                        onClick={() => setNoCreditsModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={e => e.stopPropagation()}
+                            style={{
+                                background: 'white', borderRadius: 28, padding: 40,
+                                maxWidth: 420, width: '100%', textAlign: 'center',
+                                boxShadow: '0 25px 60px rgba(0,0,0,0.2)'
+                            }}
+                        >
+                            <div style={{ fontSize: 56, marginBottom: 16 }}>⚡</div>
+                            <h2 style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', marginBottom: 8 }}>You're out of credits</h2>
+                            <p style={{ fontSize: 15, color: '#64748b', marginBottom: 28, lineHeight: 1.6 }}>
+                                Each generation uses 1 credit. Top up to keep creating stunning posts and infographics.
+                            </p>
+                            <button
+                                onClick={() => navigate('/pricing')}
+                                style={{
+                                    width: '100%', padding: '14px 24px', borderRadius: 18,
+                                    background: 'linear-gradient(135deg,#c54444,#a82c2c)', color: 'white',
+                                    fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                                    marginBottom: 12, boxShadow: '0 8px 20px rgba(197,68,68,0.3)'
+                                }}
+                            >
+                                <ShoppingCart size={18} /> Buy Credits
+                            </button>
+                            <button
+                                onClick={() => setNoCreditsModal(false)}
+                                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 14, cursor: 'pointer', fontWeight: 600 }}
+                            >
+                                Maybe later
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <main style={{ flex: 1, overflowY: 'auto' }}>
                 <div style={{ padding: '28px 32px', maxWidth: 1200, margin: '0 auto' }}>
 
-                    {/* Header */}
-                    <div style={{ marginBottom: 26 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-                            <Logo size="small" />
-                            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>LinkedIn Content Generator</h1>
-                        </div>
-                        <p style={{ color: '#64748b', fontSize: 13, margin: 0, paddingLeft: 46 }}>
-                            Create LinkedIn posts with visual AI infographics
-                        </p>
-                    </div>
+
 
                     <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: 24, alignItems: 'start' }}>
 
@@ -346,9 +415,9 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                     onClick={() => setShowPostDetails(!showPostDetails)}
                                     style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: showPostDetails ? '#f8fafc' : 'white', borderBottom: showPostDetails ? '1px solid #e2e8f0' : 'none' }}
                                 >
-                                    <p style={{ fontSize: 13, fontWeight: 800, color: '#c54444', textTransform: 'uppercase', letterSpacing: 1.2, margin: 0 }}>✍️ Post Details</p>
+                                    <p style={{ fontSize: 13, fontWeight: 800, color: '#c54444', textTransform: 'uppercase', letterSpacing: 1.2, margin: 0 }}>Post Details</p>
                                     <motion.div animate={{ rotate: showPostDetails ? 180 : 0 }}>
-                                        <RefreshCw size={14} color="#94a3b8" />
+                                        {showPostDetails ? <ChevronUp size={16} color="#94a3b8" /> : <ChevronDown size={16} color="#94a3b8" />}
                                     </motion.div>
                                 </div>
                                 <AnimatePresence>
@@ -385,39 +454,80 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                 </AnimatePresence>
                             </div>
 
-                            {/* Style Selection Dropdown */}
+                            {/* Style Selection — Custom Dropdown */}
                             <div style={{ backgroundColor: 'white', borderRadius: 24, padding: '20px 24px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-                                <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#c54444', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 16 }}>🎨 Visual Style</label>
+                                <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#c54444', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 }}>Visual Style</label>
                                 <div style={{ position: 'relative' }}>
-                                    <select
-                                        value={infographicStyle}
-                                        onChange={e => setInfographicStyle(e.target.value)}
+                                    {/* Trigger */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setStyleDropdownOpen(o => !o)}
                                         style={{
                                             width: '100%',
-                                            padding: '14px 18px',
-                                            borderRadius: 16,
-                                            border: '2px solid #f1f5f9',
-                                            fontSize: 14,
-                                            fontWeight: 700,
-                                            color: '#1e293b',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '12px 16px',
+                                            borderRadius: 14,
+                                            border: styleDropdownOpen ? '2px solid #c54444' : '2px solid #e2e8f0',
                                             background: '#f8fafc',
-                                            appearance: 'none',
                                             cursor: 'pointer',
-                                            outline: 'none',
-                                            transition: 'all 0.2s'
+                                            transition: 'all 0.2s',
+                                            fontFamily: 'inherit',
                                         }}
-                                        onFocus={e => e.target.style.borderColor = '#c54444'}
-                                        onBlur={e => e.target.style.borderColor = '#f1f5f9'}
                                     >
-                                        {STYLES.map(s => (
-                                            <option key={s.id} value={s.id}>
-                                                {s.icon} {s.label} — {s.desc}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <div style={{ position: 'absolute', right: 18, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                                        <RefreshCw size={14} color="#94a3b8" />
-                                    </div>
+                                        <div style={{ textAlign: 'left' }}>
+                                            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>{STYLES.find(s => s.id === infographicStyle)?.label}</div>
+                                            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{STYLES.find(s => s.id === infographicStyle)?.desc}</div>
+                                        </div>
+                                        <ChevronDown size={16} color="#94a3b8" style={{ transform: styleDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                                    </button>
+
+                                    {/* Dropdown List */}
+                                    {styleDropdownOpen && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: 'calc(100% + 6px)',
+                                            left: 0,
+                                            right: 0,
+                                            background: 'white',
+                                            borderRadius: 16,
+                                            border: '1.5px solid #e2e8f0',
+                                            boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                                            zIndex: 100,
+                                            overflow: 'hidden',
+                                        }}>
+                                            {STYLES.map((s, i) => {
+                                                const selected = infographicStyle === s.id;
+                                                return (
+                                                    <button
+                                                        key={s.id}
+                                                        type="button"
+                                                        onClick={() => { setInfographicStyle(s.id); setStyleDropdownOpen(false); }}
+                                                        style={{
+                                                            width: '100%',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'flex-start',
+                                                            padding: '11px 16px',
+                                                            background: selected ? '#fef2f2' : 'white',
+                                                            borderBottom: i < STYLES.length - 1 ? '1px solid #f1f5f9' : 'none',
+                                                            border: 'none',
+                                                            cursor: 'pointer',
+                                                            transition: 'background 0.15s',
+                                                            textAlign: 'left',
+                                                            fontFamily: 'inherit',
+                                                        }}
+                                                        onMouseOver={e => { if (!selected) e.currentTarget.style.background = '#f8fafc'; }}
+                                                        onMouseOut={e => { if (!selected) e.currentTarget.style.background = 'white'; }}
+                                                    >
+                                                        <span style={{ fontSize: 13, fontWeight: 700, color: selected ? '#c54444' : '#1e293b' }}>{s.label}</span>
+                                                        <span style={{ fontSize: 11, color: selected ? '#ef4444' : '#94a3b8', marginTop: 1 }}>{s.desc}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -426,6 +536,24 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                             >
                                 {loading ? <Loader2 className="animate-spin" size={20} /> : <><Wand2 size={20} /> Generate Masterpiece</>}
                             </button>
+
+                            {/* Credits indicator */}
+                            <div style={{ textAlign: 'center' }}>
+                                {credits === null ? null : credits < 1 ? (
+                                    <button onClick={() => navigate('/pricing')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#ef4444', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                        <Zap size={13} /> No credits left — Buy more
+                                    </button>
+                                ) : (
+                                    <p style={{ fontSize: 12, color: credits <= 3 ? '#f59e0b' : '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                                        <Zap size={12} /> {credits} credit{credits !== 1 ? 's' : ''} remaining
+                                        {credits <= 3 && (
+                                            <button onClick={() => navigate('/pricing')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c54444', fontWeight: 700, fontSize: 12, marginLeft: 4 }}>
+                                                — Top up
+                                            </button>
+                                        )}
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
                         {/* Content area */}
@@ -439,7 +567,7 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                             <div style={{ marginBottom: 48, textAlign: 'center' }}>
                                                 <div style={{ position: 'relative', display: 'inline-block', maxWidth: '90%' }}>
                                                     <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
-                                                        <Sparkles size={24} color="#c54444" />
+                                                        <Image size={22} color="#c54444" />
                                                         <h2 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase', letterSpacing: 1.5 }}>AI-Generated Visual</h2>
                                                     </div>
                                                     <img src={c.infographic_image_url} alt="AI Infographic"
@@ -468,23 +596,23 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                             </div>
 
                                             <div style={{ padding: '0 0 24px', borderBottom: '1px solid #e2e8f0' }}>
-                                                <p style={{ fontSize: 13, fontWeight: 800, color: '#b45309', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><span>⚡</span> The Hook</p>
+                                                <p style={{ fontSize: 13, fontWeight: 800, color: '#b45309', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><Zap size={14} color="#b45309" /> The Hook</p>
                                                 <p style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, lineHeight: 1.4, letterSpacing: '-0.02em' }}>{c?.hook}</p>
                                             </div>
 
                                             <div style={{ padding: '0 0 24px', borderBottom: '1px solid #e2e8f0' }}>
-                                                <p style={{ fontSize: 13, fontWeight: 800, color: '#1d4ed8', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><span>💬</span> High-Value Breakdown</p>
+                                                <p style={{ fontSize: 13, fontWeight: 800, color: '#1d4ed8', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><MessageSquare size={14} color="#1d4ed8" /> Post Content</p>
                                                 <p style={{ fontSize: 17, color: '#334155', margin: 0, lineHeight: 1.8, whiteSpace: 'pre-wrap', fontWeight: 400 }}>{c?.body}</p>
                                             </div>
 
                                             <div style={{ padding: '0 0 24px' }}>
-                                                <p style={{ fontSize: 13, fontWeight: 800, color: '#047857', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><span>🎯</span> Conversion CTA</p>
+                                                <p style={{ fontSize: 13, fontWeight: 800, color: '#047857', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><Target size={14} color="#047857" /> Call to Action</p>
                                                 <p style={{ fontSize: 18, fontStyle: 'italic', color: '#0f172a', margin: 0, lineHeight: 1.6, fontWeight: 700 }}>{c?.cta}</p>
                                             </div>
 
                                             {c?.hashtags?.length > 0 && (
                                                 <div style={{ paddingTop: 8 }}>
-                                                    <p style={{ fontSize: 13, fontWeight: 800, color: '#6366f1', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><span>🏷️</span> AI-Optimized Hashtags</p>
+                                                    <p style={{ fontSize: 13, fontWeight: 800, color: '#6366f1', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><Hash size={14} color="#6366f1" /> Hashtags</p>
                                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                                                         {c.hashtags.map((tag, i) => (
                                                             <span key={i} style={{ padding: '6px 16px', borderRadius: 20, background: '#f1f5f9', color: '#475569', fontSize: 14, fontWeight: 700 }}>
@@ -529,14 +657,18 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                         {loading ? (
                                             <div style={{ textAlign: 'center' }}>
                                                 <div style={{ width: 70, height: 70, border: '5px solid #f8e6e6', borderTopColor: '#c54444', borderRadius: '50%', animation: 'spin 1.2s linear infinite', margin: '0 auto 24px' }} />
-                                                <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: '0 0 8px' }}>🚀 Generating Your Masterpiece...</h2>
+                                                <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: '0 0 8px' }}>Generating your content...</h2>
                                                 <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>This is usually faster with our latest optimizations (~15-20s)</p>
                                             </div>
                                         ) : (
-                                            <div style={{ textAlign: 'center', opacity: 0.6 }}>
-                                                <div style={{ fontSize: 72, marginBottom: 20 }}>✨</div>
+                                            <div style={{ textAlign: 'center', opacity: 0.55 }}>
+                                                <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 20 }}>
+                                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#c54444', opacity: 0.4 }} />
+                                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#c54444', opacity: 0.7 }} />
+                                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#c54444', opacity: 0.4 }} />
+                                                </div>
                                                 <h3 style={{ fontWeight: 800, color: '#1e293b', margin: '0 0 8px', fontSize: 18 }}>Ready to Create?</h3>
-                                                <p style={{ fontSize: 14, color: '#64748b', margin: 0, maxWidth: 300 }}>Enter your topic on the left and we'll craft a perfect LinkedIn post & infographic.</p>
+                                                <p style={{ fontSize: 14, color: '#64748b', margin: 0, maxWidth: 300 }}>Enter your topic on the left and we'll craft a perfect LinkedIn post &amp; infographic.</p>
                                             </div>
                                         )}
                                     </motion.div>
