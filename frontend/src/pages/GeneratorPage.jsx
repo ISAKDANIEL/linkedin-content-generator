@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wand2, Loader2, Copy, RefreshCw, Download, Check, Image, FileText, Palette, Zap, MessageSquare, Target, Hash, ChevronDown, ChevronUp, ShoppingCart } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -235,10 +235,23 @@ export default function GeneratorPage() {
     const [result, setResult] = useState(null);
     const [credits, setCredits] = useState(null);
     const [noCreditsModal, setNoCreditsModal] = useState(false);
+    const styleDropdownRef = useRef(null);
 
     useEffect(() => {
         paymentAPI.getCredits().then(d => setCredits(d?.credits ?? null)).catch(() => {});
     }, []);
+
+    // Close style dropdown when clicking outside
+    useEffect(() => {
+        if (!styleDropdownOpen) return;
+        const handler = (e) => {
+            if (styleDropdownRef.current && !styleDropdownRef.current.contains(e.target)) {
+                setStyleDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [styleDropdownOpen]);
 
     const STYLES = [
         { id: 'Whiteboard', label: 'Whiteboard Sketch', Icon: Palette, desc: 'Hand-drawn marker style' },
@@ -457,7 +470,7 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                             {/* Style Selection — Custom Dropdown */}
                             <div style={{ backgroundColor: 'white', borderRadius: 24, padding: '20px 24px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
                                 <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#c54444', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 }}>Visual Style</label>
-                                <div style={{ position: 'relative' }}>
+                                <div style={{ position: 'relative' }} ref={styleDropdownRef}>
                                     {/* Trigger */}
                                     <button
                                         type="button"
@@ -511,8 +524,10 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                                             alignItems: 'flex-start',
                                                             padding: '11px 16px',
                                                             background: selected ? '#fef2f2' : 'white',
+                                                            borderTop: 'none',
+                                                            borderLeft: 'none',
+                                                            borderRight: 'none',
                                                             borderBottom: i < STYLES.length - 1 ? '1px solid #f1f5f9' : 'none',
-                                                            border: 'none',
                                                             cursor: 'pointer',
                                                             transition: 'background 0.15s',
                                                             textAlign: 'left',
