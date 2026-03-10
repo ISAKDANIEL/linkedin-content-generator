@@ -6,8 +6,12 @@ Endpoints:
   POST /api/payment/create-checkout  → create Dodo payment link (auth required)
   POST /api/payment/webhook          → Dodo webhook (no auth, signature verified)
   POST /webhook                      → alias for /api/payment/webhook
+  GET  /api/payment/check            → debug: show config + test Dodo auth
 """
 import json
+import os
+import sys
+import traceback as tb
 from flask import Blueprint, request, jsonify
 from utils.auth_middleware import token_required
 from services.dodo_service import (
@@ -15,6 +19,7 @@ from services.dodo_service import (
     verify_webhook_signature,
     credits_for_product,
     PRODUCTS,
+    DODO_BASE_URL,
 )
 from services.user_service import (
     get_user_by_id,
@@ -29,26 +34,54 @@ payment_bp = Blueprint("payment", __name__)
 # ── GET /api/payment/check ────────────────────────────────────────────────────
 @payment_bp.route("/api/payment/check", methods=["GET"])
 def payment_check():
-    """Debug: verify Dodo config is loaded correctly (no auth required)."""
-    import os, requests as req
-    api_key = os.getenv("DODO_API_KEY", "")
+    """Debug: verify Dodo config and test live authentication."""
+    import requests as req
+
+    api_key        = os.getenv("DODO_API_KEY", "")
     webhook_secret = os.getenv("DODO_WEBHOOK_SECRET", "")
+    frontend_url   = os.getenv("FRONTEND_URL", "")
 
     info = {
-        "api_key_set": bool(api_key),
-        "api_key_prefix": (api_key[:6] + "...") if api_key else "MISSING",
-        "webhook_secret_set": bool(webhook_secret),
-        "products": list(PRODUCTS.keys()),
+        "python_version":      sys.version,
+        "api_key_set":         bool(api_key),
+        "api_key_prefix":      (api_key[:8] + "...") if api_key else "MISSING",
+        "webhook_secret_set":  bool(webhook_secret),
+        "frontend_url":        frontend_url or "NOT SET (default: https://makepost.pro)",
+        "products":            list(PRODUCTS.keys()),
     }
 
-    # Try a quick connectivity test to Dodo API (HEAD request — no payment created)
+    # Test Dodo API reachability
     try:
-        r = req.get("https://api.dodopayments.com", timeout=5)
+        r = req.get(DODO_BASE_URL, timeout=5)
         info["dodo_reachable"] = True
-        info["dodo_status"] = r.status_code
+        info["dodo_base_status"] = r.status_code
     except Exception as e:
         info["dodo_reachable"] = False
-        info["dodo_error"] = str(e)
+        info["dodo_reach_error"] = str(e)
+
+    # Test Dodo authentication — list payments (read-only, no payment created)
+    if api_key:
+        try:
+            r = req.get(
+                f"{DODO_BASE_URL}/payments",
+                headers={"Authorization": f"Bearer {api_key}"},
+                timeout=8,
+            )
+            info["dodo_auth_status"] = r.status_code
+            if r.ok:
+                info["dodo_auth_ok"] = True
+            else:
+                info["dodo_auth_ok"] = False
+                try:
+                    info["dodo_auth_error"] = r.json()
+                except Exception:
+                    info["dodo_auth_error"] = r.text[:200]
+        except Exception as e:
+            info["dodo_auth_ok"] = False
+            info["dodo_auth_error"] = str(e)
+    else:
+        info["dodo_auth_ok"] = False
+        info["dodo_auth_error"] = "DODO_API_KEY not set"
 
     return jsonify(info), 200
 
@@ -57,7 +90,7 @@ def payment_check():
 @payment_bp.route("/api/credits", methods=["GET"])
 @token_required
 def get_user_credits(current_user):
-    user_id = current_user["sub"]
+    user_id = current_user.get("sub") or current_user.get("user_id") or current_user.get("id", "")
     balance = get_credits(user_id)
     return jsonify({"credits": balance}), 200
 
@@ -65,7 +98,6 @@ def get_user_credits(current_user):
 # ── GET /api/payment/products ─────────────────────────────────────────────────
 @payment_bp.route("/api/payment/products", methods=["GET"])
 def list_products():
-    """Return available credit packs (public)."""
     return jsonify({"products": [
         {"product_id": pid, **info}
         for pid, info in PRODUCTS.items()
@@ -76,26 +108,39 @@ def list_products():
 @payment_bp.route("/api/payment/create-checkout", methods=["POST"])
 @token_required
 def create_checkout(current_user):
-    data = request.get_json() or {}
-    product_id = data.get("product_id", "").strip()
-
-    if product_id not in PRODUCTS:
-        return jsonify({"error": "Invalid product_id"}), 400
-
-    user_id = current_user.get("sub") or current_user.get("user_id") or current_user.get("id", "")
-    if not user_id:
-        return jsonify({"error": "Invalid token: missing user ID"}), 401
-    user_email = current_user.get("email", "")
-    user_name = current_user.get("name", "")
-
     try:
+        data = request.get_json(silent=True) or {}
+        product_id = str(data.get("product_id") or "").strip()
+
+        if not product_id:
+            return jsonify({"error": "product_id is required"}), 400
+
+        if product_id not in PRODUCTS:
+            return jsonify({"error": f"Invalid product_id: {product_id}"}), 400
+
+        user_id    = current_user.get("sub") or current_user.get("user_id") or current_user.get("id") or ""
+        user_email = current_user.get("email") or ""
+        user_name  = current_user.get("name") or ""
+
+        if not user_id:
+            return jsonify({"error": "Invalid token: missing user ID"}), 401
+
         result = create_payment_link(product_id, user_email, user_name, user_id)
-        payment_link = result.get("payment_link") or result.get("checkout_url") or result.get("url")
-        payment_id = result.get("payment_id") or result.get("id")
+
+        # Dodo returns payment_link at top level
+        payment_link = (
+            result.get("payment_link")
+            or result.get("checkout_url")
+            or result.get("url")
+        )
+        payment_id = result.get("payment_id") or result.get("id") or ""
 
         if not payment_link:
-            print(f"Dodo response missing payment_link: {result}")
-            return jsonify({"error": "Payment provider did not return a checkout URL"}), 502
+            print(f"[Payment] Dodo response missing payment_link. Full response: {result}")
+            return jsonify({
+                "error": "Payment provider did not return a checkout URL",
+                "dodo_response": result,
+            }), 502
 
         return jsonify({
             "payment_link": payment_link,
@@ -103,29 +148,25 @@ def create_checkout(current_user):
         }), 200
 
     except RuntimeError as e:
-        print(f"Payment creation error: {e}")
+        print(f"[Payment] RuntimeError: {e}")
         return jsonify({"error": str(e)}), 502
+
     except Exception as e:
-        import traceback
-        print(f"Unexpected payment error ({type(e).__name__}): {e}")
-        traceback.print_exc()
-        return jsonify({"error": f"Unexpected error: {type(e).__name__}: {e}"}), 500
+        print(f"[Payment] Unexpected {type(e).__name__}: {e}")
+        tb.print_exc()
+        return jsonify({"error": f"{type(e).__name__}: {e}"}), 500
 
 
 # ── POST /api/payment/webhook ─────────────────────────────────────────────────
 @payment_bp.route("/api/payment/webhook", methods=["POST"])
 def payment_webhook():
-    """
-    Dodo Payments webhook — Standard Webhooks format.
-    Headers: webhook-id, webhook-timestamp, webhook-signature
-    """
+    """Dodo Payments webhook — Standard Webhooks format."""
     payload_body = request.get_data()
 
     webhook_id        = request.headers.get("webhook-id", "")
     webhook_timestamp = request.headers.get("webhook-timestamp", "")
     webhook_signature = request.headers.get("webhook-signature", "")
 
-    # Verify signature
     if not verify_webhook_signature(payload_body, webhook_id, webhook_timestamp, webhook_signature):
         print("Webhook signature verification FAILED")
         return jsonify({"error": "Invalid signature"}), 401
@@ -138,12 +179,7 @@ def payment_webhook():
     event_type = event.get("type", "")
     print(f"Dodo webhook received: {event_type}")
 
-    # Handle payment.succeeded (one-time payment)
-    if event_type == "payment.succeeded":
-        _handle_payment_succeeded(event.get("data", {}))
-
-    # Also handle subscription_payment.succeeded if you ever add subscriptions
-    elif event_type == "subscription_payment.succeeded":
+    if event_type in ("payment.succeeded", "subscription_payment.succeeded"):
         _handle_payment_succeeded(event.get("data", {}))
 
     return jsonify({"received": True}), 200
@@ -152,25 +188,23 @@ def payment_webhook():
 # ── POST /webhook ─────────────────────────────────────────────────────────────
 @payment_bp.route("/webhook", methods=["POST"])
 def payment_webhook_root():
-    """Alias for /api/payment/webhook — matches Dodo dashboard URL."""
+    """Alias for /api/payment/webhook."""
     return payment_webhook()
 
 
 def _handle_payment_succeeded(data: dict):
-    """Credit the user after a successful payment."""
     payment_id = data.get("payment_id") or data.get("id")
     metadata   = data.get("metadata") or {}
     user_id    = metadata.get("user_id")
     product_id = metadata.get("product_id")
 
-    # Fallback: get product_id from product_cart if not in metadata
     if not product_id:
         cart = data.get("product_cart") or []
         if cart:
             product_id = cart[0].get("product_id")
 
     if not user_id or not product_id or not payment_id:
-        print(f"Webhook missing required fields: user_id={user_id}, product_id={product_id}, payment_id={payment_id}")
+        print(f"Webhook missing fields: user_id={user_id}, product_id={product_id}, payment_id={payment_id}")
         return
 
     credits = credits_for_product(product_id)
@@ -178,7 +212,6 @@ def _handle_payment_succeeded(data: dict):
         print(f"Unknown product in webhook: {product_id}")
         return
 
-    # Idempotency: skip if already processed
     saved = save_payment_record(user_id, payment_id, product_id, credits)
     if not saved:
         print(f"Payment {payment_id} already processed — skipping")
