@@ -10,7 +10,7 @@ import hashlib
 import base64
 import requests
 
-DODO_BASE_URL = "https://api.dodopayments.com"
+DODO_BASE_URL = "https://live.dodopayments.com"
 
 PRODUCTS = {
     "pdt_0Na7FjdXD1pQPf21Coma5": {"price": 59,  "credits": 30, "name": "Starter Pack",  "label": "30 Credits"},
