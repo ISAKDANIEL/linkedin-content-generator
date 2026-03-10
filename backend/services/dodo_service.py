@@ -10,10 +10,7 @@ import hashlib
 import base64
 import requests
 
-DODO_API_KEY = os.getenv("DODO_API_KEY", "")
-DODO_WEBHOOK_SECRET = os.getenv("DODO_WEBHOOK_SECRET", "")
 DODO_BASE_URL = "https://api.dodopayments.com"
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 PRODUCTS = {
     "pdt_0Na7FjdXD1pQPf21Coma5": {"price": 59,  "credits": 30, "name": "Starter Pack",  "label": "30 Credits"},
@@ -26,16 +23,18 @@ def create_payment_link(product_id: str, user_email: str, user_name: str, user_i
     Call Dodo Payments API to create a hosted payment link.
     Returns the full API response dict (includes payment_link URL).
     """
-    if not DODO_API_KEY:
+    api_key = os.getenv("DODO_API_KEY", "")
+    if not api_key:
         raise RuntimeError("DODO_API_KEY is not configured")
 
     if product_id not in PRODUCTS:
         raise ValueError(f"Unknown product_id: {product_id}")
 
-    return_url = f"{FRONTEND_URL}/payment/success"
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    return_url = f"{frontend_url}/payment/success"
 
     headers = {
-        "Authorization": f"Bearer {DODO_API_KEY}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
 
@@ -45,7 +44,7 @@ def create_payment_link(product_id: str, user_email: str, user_name: str, user_i
             "country": "IN",
             "state": "MH",
             "street": "N/A",
-            "zipcode": "400001",
+            "zipcode": 400001,
         },
         "customer": {
             "email": user_email,
@@ -62,15 +61,24 @@ def create_payment_link(product_id: str, user_email: str, user_name: str, user_i
         },
     }
 
-    resp = requests.post(f"{DODO_BASE_URL}/payments", json=payload, headers=headers, timeout=15)
+    try:
+        resp = requests.post(f"{DODO_BASE_URL}/payments", json=payload, headers=headers, timeout=15)
+    except requests.exceptions.ConnectionError as e:
+        raise RuntimeError(f"Cannot connect to Dodo Payments API ({DODO_BASE_URL}). Check network/firewall.") from e
+    except requests.exceptions.Timeout:
+        raise RuntimeError("Dodo Payments API request timed out (>15s). Try again.") from None
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(f"Dodo API request failed: {e}") from e
+
+    print(f"[Dodo] Status: {resp.status_code} | Body: {resp.text[:500]}")
+
+    if not resp.ok:
+        raise RuntimeError(f"Dodo API error {resp.status_code}: {resp.text[:400]}")
 
     try:
-        resp.raise_for_status()
-    except requests.HTTPError as e:
-        error_detail = resp.text
-        raise RuntimeError(f"Dodo API error {resp.status_code}: {error_detail}") from e
-
-    return resp.json()
+        return resp.json()
+    except ValueError as e:
+        raise RuntimeError(f"Dodo API returned non-JSON response: {resp.text[:200]}") from e
 
 
 def verify_webhook_signature(payload_body: bytes, webhook_id: str, webhook_timestamp: str, webhook_signature: str) -> bool:
@@ -79,12 +87,12 @@ def verify_webhook_signature(payload_body: bytes, webhook_id: str, webhook_times
     Header names: webhook-id, webhook-timestamp, webhook-signature
     Secret format: whsec_<base64>
     """
-    if not DODO_WEBHOOK_SECRET:
+    secret = os.getenv("DODO_WEBHOOK_SECRET", "")
+    if not secret:
         print("WARNING: DODO_WEBHOOK_SECRET not set — skipping webhook verification")
         return True
 
     try:
-        secret = DODO_WEBHOOK_SECRET
         if secret.startswith("whsec_"):
             secret = secret[len("whsec_"):]
         secret_bytes = base64.b64decode(secret)

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, User, Eye, EyeOff, Zap, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
@@ -14,6 +14,7 @@ export default function LoginPage() {
     const [form, setForm] = useState({ email: '', password: '', name: '' });
     const [showPass, setShowPass] = useState(false);
     const [loading, setLoading] = useState(false);
+    const ADMIN_EMAIL = 'admin@gmail.com';
     const { login, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -26,7 +27,7 @@ export default function LoginPage() {
         if (token) {
             login(token);
             toast.success('Signed in with Google!', { id: 'google-login' });
-            navigate('/generate', { replace: true });
+            navigate(getRedirect(token), { replace: true });
         }
         if (error) {
             const messages = {
@@ -37,6 +38,13 @@ export default function LoginPage() {
             toast.error(messages[error] || 'Google sign-in failed.');
         }
     }, [location]);
+
+    const getRedirect = (token) => {
+        try {
+            const decoded = JSON.parse(atob(token.split('.')[1]));
+            return decoded.email === ADMIN_EMAIL ? '/admin' : '/generate';
+        } catch { return '/generate'; }
+    };
 
     useEffect(() => {
         if (isAuthenticated) navigate('/generate', { replace: true });
@@ -58,7 +66,7 @@ export default function LoginPage() {
             }
             login(data.token);
             toast.success(mode === 'login' ? 'Welcome back!' : 'Account created! Welcome 🎉');
-            navigate('/generate', { replace: true });
+            navigate(getRedirect(data.token), { replace: true });
         } catch (err) {
             // 409 = account already exists → auto-switch to login
             if (err.message && (err.message.includes('already exists') || err.status === 409 || err.message.includes('409'))) {
@@ -242,7 +250,18 @@ export default function LoginPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="block text-sm font-medium text-slate-700">Password</label>
+                                {mode === 'login' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/forgot-password')}
+                                        className="text-xs text-indigo-600 font-semibold hover:underline"
+                                    >
+                                        Forgot password?
+                                    </button>
+                                )}
+                            </div>
                             <div className="relative">
                                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                 <input

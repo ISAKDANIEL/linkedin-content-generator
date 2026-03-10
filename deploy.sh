@@ -13,6 +13,13 @@ echo "==> Pulling latest code from GitHub..."
 cd "$PROJECT_DIR"
 git pull origin main
 
+echo "==> Syncing .env file..."
+# Copy project-root backend.env → backend/.env so systemd EnvironmentFile picks it up
+if [ -f "$PROJECT_DIR/backend.env" ]; then
+    cp "$PROJECT_DIR/backend.env" "$BACKEND_DIR/.env"
+    echo "    Copied backend.env → backend/.env"
+fi
+
 echo "==> Installing Python dependencies..."
 cd "$BACKEND_DIR"
 pip install -r requirements.txt --quiet

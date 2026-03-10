@@ -2,8 +2,10 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+const ADMIN_EMAIL = 'admin@gmail.com';
+
 export default function ProtectedRoute({ children }) {
-    const { isAuthenticated, loading } = useAuth();
+    const { isAuthenticated, loading, user } = useAuth();
 
     if (loading) {
         return (
@@ -15,6 +17,11 @@ export default function ProtectedRoute({ children }) {
 
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
+    }
+
+    // Admin must stay on admin dashboard — block access to user pages
+    if (user?.email === ADMIN_EMAIL) {
+        return <Navigate to="/admin" replace />;
     }
 
     return children;

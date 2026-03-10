@@ -41,6 +41,18 @@ export const authAPI = {
             return res.data;
         } catch (err) { throwApiError(err); }
     },
+    async forgotPassword(email) {
+        try {
+            const res = await api.post('/auth/forgot-password', { email });
+            return res.data;
+        } catch (err) { throwApiError(err); }
+    },
+    async resetPassword(token, password) {
+        try {
+            const res = await api.post('/auth/reset-password', { token, password });
+            return res.data;
+        } catch (err) { throwApiError(err); }
+    },
 };
 
 // ── Content API ───────────────────────────────────────────────────────────────
@@ -93,15 +105,43 @@ export const paymentAPI = {
             return res.data;
         } catch (err) { throwApiError(err); }
     },
-    async upiConfig() {
+};
+
+// ── Admin API ──────────────────────────────────────────────────────────────────
+export const adminAPI = {
+    async getStats() {
         try {
-            const res = await api.get('/api/payment/upi-config');
+            const res = await api.get('/api/admin/stats', { headers: authHeaders() });
             return res.data;
         } catch (err) { throwApiError(err); }
     },
-    async upiSubmit(product_id, utr) {
+    async getUsers() {
         try {
-            const res = await api.post('/api/payment/upi-submit', { product_id, utr }, { headers: authHeaders() });
+            const res = await api.get('/api/admin/users', { headers: authHeaders() });
+            return res.data;
+        } catch (err) { throwApiError(err); }
+    },
+    async getPayments() {
+        try {
+            const res = await api.get('/api/admin/payments', { headers: authHeaders() });
+            return res.data;
+        } catch (err) { throwApiError(err); }
+    },
+    async getHistory() {
+        try {
+            const res = await api.get('/api/admin/history', { headers: authHeaders() });
+            return res.data;
+        } catch (err) { throwApiError(err); }
+    },
+    async updateCredits(userId, action, amount) {
+        try {
+            const res = await api.post(`/api/admin/users/${userId}/credits`, { action, amount }, { headers: authHeaders() });
+            return res.data;
+        } catch (err) { throwApiError(err); }
+    },
+    async deleteUser(userId) {
+        try {
+            const res = await api.delete(`/api/admin/users/${userId}`, { headers: authHeaders() });
             return res.data;
         } catch (err) { throwApiError(err); }
     },

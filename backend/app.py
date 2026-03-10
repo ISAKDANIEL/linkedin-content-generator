@@ -1,13 +1,40 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
-from services.local_db import init_local_db
+from services.local_db import init_local_db, local_get_user_by_email, local_create_user
+from services.auth_service import hash_password
 import os
 
-load_dotenv()
+# Try project-root backend.env first (local dev), then backend/.env (VPS)
+_root_env = os.path.join(os.path.dirname(__file__), '..', 'backend.env')
+_local_env = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(dotenv_path=_root_env)
+load_dotenv(dotenv_path=_local_env)  # won't override already-set vars
 
-# Initialize local SQLite DB (used when Supabase is not configured)
+# Initialize local SQLite DB
 init_local_db()
+
+# ── Auto-create admin account on startup ──────────────────────────────────────
+_ADMIN_EMAIL    = "admin@gmail.com"
+_ADMIN_PASSWORD = "admin123"
+_ADMIN_NAME     = "Admin"
+
+def _ensure_admin():
+    from services.local_db import _get_conn
+    existing = local_get_user_by_email(_ADMIN_EMAIL)
+    pw_hash = hash_password(_ADMIN_PASSWORD)
+    if not existing:
+        local_create_user(email=_ADMIN_EMAIL, name=_ADMIN_NAME, password_hash=pw_hash, provider="email")
+        print(f"Admin account created → {_ADMIN_EMAIL}")
+    else:
+        # Always sync password so it matches _ADMIN_PASSWORD
+        conn = _get_conn()
+        conn.execute("UPDATE users SET password_hash=?, provider='email' WHERE email=?", (pw_hash, _ADMIN_EMAIL))
+        conn.commit()
+        conn.close()
+        print(f"Admin account ready → {_ADMIN_EMAIL}")
+
+_ensure_admin()
 
 app = Flask(__name__)
 
@@ -33,11 +60,13 @@ from routes.auth_routes import auth_bp
 from routes.content_routes import content_bp
 from routes.history_routes import history_bp
 from routes.payment_routes import payment_bp
+from routes.admin_routes import admin_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(content_bp)
 app.register_blueprint(history_bp)
 app.register_blueprint(payment_bp)
+app.register_blueprint(admin_bp)
 
 # ── Legacy route (backward compat with old frontend) ──────────────────────────
 from services.openai_service import generate_linkedin_post

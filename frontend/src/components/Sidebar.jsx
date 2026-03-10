@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusCircle, Trash2, Clock, LogOut, ChevronLeft, ChevronRight, Zap, ShoppingCart } from 'lucide-react';
+import { PlusCircle, Trash2, Clock, LogOut, ChevronLeft, ChevronRight, Zap, ShoppingCart, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { historyAPI, paymentAPI } from '../services/api';
 import toast from 'react-hot-toast';
@@ -178,6 +178,19 @@ export default function Sidebar({ onNewPost, onSelectHistory, currentHistoryId }
                     ))}
                 </div>
             </div>
+
+            {/* Admin link — only visible to admin */}
+            {!collapsed && user?.email === 'admin@gmail.com' && (
+                <div className="px-3 pb-1">
+                    <button
+                        onClick={() => navigate('/admin')}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 font-semibold text-xs hover:bg-violet-100 transition-colors"
+                    >
+                        <Shield size={14} className="flex-shrink-0" />
+                        Admin Panel
+                    </button>
+                </div>
+            )}
 
             {/* Credits badge + Buy Credits */}
             {!collapsed && (

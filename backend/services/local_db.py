@@ -53,6 +53,15 @@ def init_local_db():
             status TEXT DEFAULT 'succeeded',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS password_resets (
+            id TEXT PRIMARY KEY,
+            email TEXT NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            expires_at TEXT NOT NULL,
+            used INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
     """)
     # Migrate: add credits column to existing users table if absent
     try:
@@ -216,5 +225,147 @@ def local_save_payment(user_id: str, payment_id: str, product_id: str, credits_a
         return True
     except sqlite3.IntegrityError:
         return False  # payment_id already processed
+    finally:
+        conn.close()
+
+
+# ── Admin operations ──────────────────────────────────────────────────────────
+def local_get_all_users() -> list:
+    conn = _get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT id, email, name, provider, credits, created_at FROM users ORDER BY created_at DESC"
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def local_get_all_payments() -> list:
+    conn = _get_conn()
+    try:
+        rows = conn.execute("""
+            SELECT p.id, p.user_id, p.payment_id, p.product_id, p.credits_added,
+                   p.status, p.created_at, u.email, u.name
+            FROM payments p
+            LEFT JOIN users u ON p.user_id = u.id
+            ORDER BY p.created_at DESC
+        """).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def local_get_all_history() -> list:
+    conn = _get_conn()
+    try:
+        rows = conn.execute("""
+            SELECT h.id, h.user_id, h.title, h.tone, h.audience, h.created_at, u.email
+            FROM search_history h
+            LEFT JOIN users u ON h.user_id = u.id
+            ORDER BY h.created_at DESC
+            LIMIT 200
+        """).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def local_get_admin_stats() -> dict:
+    conn = _get_conn()
+    try:
+        total_users = conn.execute("SELECT COUNT(*) as c FROM users").fetchone()["c"]
+        total_credits = conn.execute("SELECT COALESCE(SUM(credits), 0) as c FROM users").fetchone()["c"]
+        total_payments = conn.execute("SELECT COUNT(*) as c FROM payments").fetchone()["c"]
+        total_credits_sold = conn.execute("SELECT COALESCE(SUM(credits_added), 0) as c FROM payments").fetchone()["c"]
+        total_generations = conn.execute("SELECT COUNT(*) as c FROM search_history").fetchone()["c"]
+        return {
+            "total_users": total_users,
+            "total_credits_in_accounts": int(total_credits),
+            "total_payments": total_payments,
+            "total_credits_sold": int(total_credits_sold),
+            "total_generations": total_generations,
+        }
+    finally:
+        conn.close()
+
+
+def local_set_user_credits(user_id: str, amount: int) -> int:
+    """Set user credits to exact amount. Returns new balance."""
+    conn = _get_conn()
+    try:
+        conn.execute("UPDATE users SET credits = ? WHERE id = ?", (max(0, amount), user_id))
+        conn.commit()
+        row = conn.execute("SELECT credits FROM users WHERE id = ?", (user_id,)).fetchone()
+        return row["credits"] if row else 0
+    finally:
+        conn.close()
+
+
+# ── Password reset operations ─────────────────────────────────────────────────
+def local_create_password_reset(email: str, token: str, expires_at: str) -> bool:
+    """Store a password reset token. Returns True on success."""
+    rid = str(uuid.uuid4())
+    now = datetime.utcnow().isoformat()
+    conn = _get_conn()
+    try:
+        # Invalidate any previous unused tokens for this email
+        conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email,))
+        conn.execute(
+            "INSERT INTO password_resets (id, email, token, expires_at, created_at) VALUES (?,?,?,?,?)",
+            (rid, email, token, expires_at, now)
+        )
+        conn.commit()
+        return True
+    except Exception:
+        return False
+    finally:
+        conn.close()
+
+
+def local_get_password_reset(token: str) -> dict | None:
+    """Get a valid (unused, non-expired) reset record by token."""
+    conn = _get_conn()
+    try:
+        row = conn.execute(
+            "SELECT * FROM password_resets WHERE token=? AND used=0",
+            (token,)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def local_use_password_reset(token: str) -> bool:
+    """Mark token as used. Returns True if it was updated."""
+    conn = _get_conn()
+    try:
+        cur = conn.execute("UPDATE password_resets SET used=1 WHERE token=?", (token,))
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
+def local_update_user_password(email: str, password_hash: str) -> bool:
+    """Update user's password hash."""
+    conn = _get_conn()
+    try:
+        cur = conn.execute("UPDATE users SET password_hash=? WHERE email=?", (password_hash, email))
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
+def local_delete_user(user_id: str) -> bool:
+    """Delete a user and all their data."""
+    conn = _get_conn()
+    try:
+        conn.execute("DELETE FROM search_history WHERE user_id = ?", (user_id,))
+        conn.execute("DELETE FROM payments WHERE user_id = ?", (user_id,))
+        cur = conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+        return cur.rowcount > 0
     finally:
         conn.close()
