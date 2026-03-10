@@ -1,3 +1,4 @@
+from __future__ import annotations
 from services.supabase_service import supabase
 from services.local_db import (
     local_get_user_by_email, local_get_user_by_id,

@@ -3,6 +3,7 @@ SQLite-based local database fallback used when Supabase credentials are not conf
 Provides the same interface used by user_service.py and history_service.py.
 Database file: backend/local_data.db
 """
+from __future__ import annotations
 import sqlite3
 import uuid
 import json

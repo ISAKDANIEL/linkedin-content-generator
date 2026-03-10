@@ -66,7 +66,7 @@ export default function PricingPage() {
                 toast.error('Could not create payment session. Try again.');
             }
         } catch (err) {
-            toast.error('Payment unavailable. Please contact support.');
+            toast.error(err.message || 'Failed to create payment session. Please try again.');
         } finally {
             setLoadingPlanId(null);
         }

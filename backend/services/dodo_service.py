@@ -44,7 +44,7 @@ def create_payment_link(product_id: str, user_email: str, user_name: str, user_i
             "country": "IN",
             "state": "MH",
             "street": "N/A",
-            "zipcode": 400001,
+            "zipcode": "400001",
         },
         "customer": {
             "email": user_email,

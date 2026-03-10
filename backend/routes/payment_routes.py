@@ -82,7 +82,9 @@ def create_checkout(current_user):
     if product_id not in PRODUCTS:
         return jsonify({"error": "Invalid product_id"}), 400
 
-    user_id = current_user["sub"]
+    user_id = current_user.get("sub") or current_user.get("user_id") or current_user.get("id", "")
+    if not user_id:
+        return jsonify({"error": "Invalid token: missing user ID"}), 401
     user_email = current_user.get("email", "")
     user_name = current_user.get("name", "")
 

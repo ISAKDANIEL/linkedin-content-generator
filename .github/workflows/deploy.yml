@@ -20,6 +20,9 @@ jobs:
             echo "==> Pull latest code"
             git pull origin main
 
+            echo "==> Sync env file"
+            if [ -f backend.env ]; then cp backend.env backend/.env && echo "Synced backend.env -> backend/.env"; fi
+
             echo "==> Install Python deps"
             pip install -r backend/requirements.txt --quiet
 
