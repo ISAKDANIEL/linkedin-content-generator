@@ -1,285 +1,307 @@
 """
 Pillow-based infographic renderer.
-Generates a structured, fully-visible PNG directly from the JSON content data.
-No DALL-E dependency — guaranteed layout, all sections on one page.
+Output: 1080px wide (LinkedIn standard) × dynamic height.
+LinkedIn recommended portrait size: 1080 × 1350px (4:5 ratio).
+All sections guaranteed to be visible on one image.
 """
+from __future__ import annotations
 import os
+import re
 import uuid
-import textwrap
 from PIL import Image, ImageDraw, ImageFont
 
 IMAGES_DIR = os.path.join(os.path.dirname(__file__), '..', 'static', 'images')
 os.makedirs(IMAGES_DIR, exist_ok=True)
 
-# ── Section color palette (cycles if more than 10 sections) ──────────────────
+# ── LinkedIn canvas dimensions ────────────────────────────────────────────────
+W = 1080          # LinkedIn standard post width
+MIN_H = 1350      # 4:5 portrait ratio minimum
+
+# ── Section color palette ─────────────────────────────────────────────────────
 SECTION_COLORS = [
-    "#e74c4c",  # red
-    "#e67e22",  # orange
-    "#2980b9",  # blue
-    "#8e44ad",  # purple
-    "#27ae60",  # green
-    "#16a085",  # teal
-    "#c0392b",  # dark red
-    "#d35400",  # dark orange
-    "#1abc9c",  # mint
-    "#2c3e50",  # charcoal blue
+    "#E53E3E",  # red
+    "#DD6B20",  # orange
+    "#2B6CB0",  # blue
+    "#6B46C1",  # purple
+    "#276749",  # green
+    "#0987A0",  # teal
+    "#C53030",  # dark red
+    "#C05621",  # burnt orange
+    "#2C7A7B",  # cyan
+    "#1A365D",  # navy
 ]
 
-# ── Font loader — works on both Windows and Ubuntu ────────────────────────────
-def _load_font(size: int, bold: bool = False) -> ImageFont.ImageFont:
-    """Try several font paths; fall back to PIL default."""
-    candidates = []
-    if bold:
-        candidates = [
+# ── Font loader ───────────────────────────────────────────────────────────────
+def _font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
+    paths = (
+        [
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
             "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
             "C:/Windows/Fonts/arialbd.ttf",
             "C:/Windows/Fonts/calibrib.ttf",
-            "C:/Windows/Fonts/segoeui.ttf",
-            "/System/Library/Fonts/Helvetica.ttc",
         ]
-    else:
-        candidates = [
+        if bold else
+        [
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
             "C:/Windows/Fonts/arial.ttf",
             "C:/Windows/Fonts/calibri.ttf",
-            "C:/Windows/Fonts/segoeui.ttf",
-            "/System/Library/Fonts/Helvetica.ttc",
         ]
-    for path in candidates:
-        if os.path.exists(path):
+    )
+    for p in paths:
+        if os.path.exists(p):
             try:
-                return ImageFont.truetype(path, size)
+                return ImageFont.truetype(p, size)
             except Exception:
-                continue
+                pass
     return ImageFont.load_default()
 
 
-def _wrap(text: str, font: ImageFont.ImageFont, max_width: int, draw: ImageDraw.ImageDraw) -> list[str]:
-    """Word-wrap text to fit max_width pixels."""
+def _wrap(text: str, font, max_w: int, draw: ImageDraw.ImageDraw) -> list[str]:
     words = text.split()
-    lines, current = [], ""
-    for word in words:
-        test = (current + " " + word).strip()
-        bbox = draw.textbbox((0, 0), test, font=font)
-        if bbox[2] <= max_width:
-            current = test
+    lines, cur = [], ""
+    for w in words:
+        test = (cur + " " + w).strip()
+        if draw.textbbox((0, 0), test, font=font)[2] <= max_w:
+            cur = test
         else:
-            if current:
-                lines.append(current)
-            current = word
-    if current:
-        lines.append(current)
+            if cur:
+                lines.append(cur)
+            cur = w
+    if cur:
+        lines.append(cur)
     return lines or [""]
 
 
+def _hex(color: str) -> tuple[int, int, int]:
+    c = color.lstrip("#")
+    return int(c[0:2], 16), int(c[2:4], 16), int(c[4:6], 16)
+
+
+def _darken(color: str, factor: float = 0.75) -> tuple[int, int, int]:
+    r, g, b = _hex(color)
+    return int(r * factor), int(g * factor), int(b * factor)
+
+
 def render_infographic(title: str, content_data: dict, style: str = "Whiteboard") -> str | None:
-    """
-    Render a structured infographic PNG from JSON content data.
-    Returns the server path /api/images/<filename> or None on error.
-    """
     try:
-        infographic = content_data.get("infographic", {})
-        categories  = infographic.get("categories", [])
-        subtitle    = infographic.get("subtitle", "")
-        inf_title   = infographic.get("title", title)
+        inf        = content_data.get("infographic", {})
+        categories = inf.get("categories", [])
+        subtitle   = inf.get("subtitle", "")
+        inf_title  = inf.get("title", title)
 
         if not categories:
             return None
 
-        # ── Canvas geometry ───────────────────────────────────────────────────
-        W          = 800
-        PAD        = 28          # horizontal outer padding
-        INNER_PAD  = 20          # padding inside section blocks
+        # ── Theme ─────────────────────────────────────────────────────────────
+        themes = {
+            "Handwritten Notes": dict(
+                BG="#fefcf3", HDR_BG="#1a202c", HDR_TEXT="#ffffff",
+                CARD_BG="#ffffff", CARD_BORDER="#e2e8f0",
+                BODY_TEXT="#2d3748", SUB_TEXT="#4a5568",
+                ACCENT_MUL=1.0, FOOTER_BG="#1a202c",
+            ),
+            "Corporate Modern": dict(
+                BG="#EBF4FF", HDR_BG="#1e3a5f", HDR_TEXT="#ffffff",
+                CARD_BG="#ffffff", CARD_BORDER="#bee3f8",
+                BODY_TEXT="#1e3a5f", SUB_TEXT="#4a6fa5",
+                ACCENT_MUL=1.0, FOOTER_BG="#1e3a5f",
+            ),
+            "Executive Guide": dict(
+                BG="#0d1117", HDR_BG="#0d1117", HDR_TEXT="#ffffff",
+                CARD_BG="#161b22", CARD_BORDER="#30363d",
+                BODY_TEXT="#e6edf3", SUB_TEXT="#8b949e",
+                ACCENT_MUL=1.0, FOOTER_BG="#010409",
+            ),
+        }
+        T = themes.get(style, dict(
+            BG="#f7fafc", HDR_BG="#1a1a2e", HDR_TEXT="#ffffff",
+            CARD_BG="#ffffff", CARD_BORDER="#e2e8f0",
+            BODY_TEXT="#2d3748", SUB_TEXT="#718096",
+            ACCENT_MUL=1.0, FOOTER_BG="#1a1a2e",
+        ))
 
-        # Choose theme based on style
-        if style == "Handwritten Notes":
-            BG       = "#fdf9f0"    # cream paper
-            HDR_BG   = "#2c3e50"
-            TEXT_HDR = "#ffffff"
-            CARD_BG  = "#ffffff"
-            CARD_BORDER = True
-            FONT_COLOR = "#1a1a2e"
-            SUB_COLOR  = "#555555"
-            TAG_BG     = "#e8f4fd"
-            TAG_FG     = "#2980b9"
-        elif style == "Corporate Modern":
-            BG       = "#f0f4f8"
-            HDR_BG   = "#1e3a5f"
-            TEXT_HDR = "#ffffff"
-            CARD_BG  = "#ffffff"
-            CARD_BORDER = False
-            FONT_COLOR = "#1e3a5f"
-            SUB_COLOR  = "#4a6fa5"
-            TAG_BG     = "#e3f2fd"
-            TAG_FG     = "#1565c0"
-        elif style == "Executive Guide":
-            BG       = "#0d1117"
-            HDR_BG   = "#161b22"
-            TEXT_HDR = "#ffffff"
-            CARD_BG  = "#161b22"
-            CARD_BORDER = False
-            FONT_COLOR = "#e6edf3"
-            SUB_COLOR  = "#8b949e"
-            TAG_BG     = "#21262d"
-            TAG_FG     = "#58a6ff"
-        else:  # Whiteboard / default
-            BG       = "#ffffff"
-            HDR_BG   = "#1a1a2e"
-            TEXT_HDR = "#ffffff"
-            CARD_BG  = "#f8f9fa"
-            CARD_BORDER = True
-            FONT_COLOR = "#1a1a2e"
-            SUB_COLOR  = "#555555"
-            TAG_BG     = "#e8f5e9"
-            TAG_FG     = "#2e7d32"
+        # ── Fonts (scaled for 1080px LinkedIn) ────────────────────────────────
+        PAD       = 40           # outer horizontal padding
+        INNER     = 22           # inner card padding
+        BADGE_SZ  = 54           # number badge square size
+        BAR_W     = 8            # left color accent bar width
+        SEC_GAP   = 14           # gap between section cards
+        HDR_PAD   = 20           # header top/bottom padding
+        LINE_H_B  = 22           # bullet line height
+        LINE_H_T  = 28           # tag line height
 
-        # ── Fonts ─────────────────────────────────────────────────────────────
-        f_title    = _load_font(30, bold=True)
-        f_subtitle = _load_font(16, bold=False)
-        f_sec_name = _load_font(18, bold=True)
-        f_tag      = _load_font(13, bold=False)
-        f_bullet   = _load_font(13, bold=False)
-        f_badge    = _load_font(16, bold=True)
+        f_badge    = _font(24, bold=True)
+        f_heading  = _font(26, bold=True)
+        f_tag      = _font(16, bold=False)
+        f_bullet   = _font(16, bold=False)
+        f_title_lg = _font(38, bold=True)
+        f_subtitle = _font(20, bold=False)
+        f_brand    = _font(17, bold=False)
+        f_ai_badge = _font(14, bold=True)
 
-        # ── Pre-measure total height ──────────────────────────────────────────
-        # Use a dummy image to measure text
-        dummy   = Image.new("RGB", (W, 100))
-        dd      = ImageDraw.Draw(dummy)
-        content_width = W - PAD * 2
+        text_width = W - PAD * 2 - BAR_W - BADGE_SZ - INNER * 2
 
-        HDR_H   = 110   # header block
-        SEC_GAP = 10    # gap between sections
-        BADGE_W = 44    # number badge width
-        SECTION_PAD = INNER_PAD
+        # ── Measure sections ──────────────────────────────────────────────────
+        dummy = Image.new("RGB", (W, 10))
+        dd    = ImageDraw.Draw(dummy)
 
-        def measure_section(cat):
-            nodes      = cat.get("nodes", [])[:6]
-            h = SECTION_PAD * 2
-            # Section name line
-            h += 28
-            # Tags row
-            h += 26
-            # Bullet points
+        def measure_section(cat: dict) -> int:
+            nodes = cat.get("nodes", [])[:6]
+            h = INNER * 2 + BADGE_SZ + 8   # top padding + heading row
+            h += LINE_H_T + 6              # tags row
             for node in nodes:
-                label    = node.get("label", "")
-                sublabel = node.get("sublabel", "")
-                full     = f"• {label}: {sublabel}" if sublabel else f"• {label}"
-                lines    = _wrap(full, f_bullet, content_width - BADGE_W - SECTION_PAD * 2, dd)
-                h += len(lines) * 18 + 4
-            h += 6  # bottom breathing room
+                lbl = node.get("label", "")
+                sub = node.get("sublabel", "")
+                txt = f"• {lbl}: {sub}" if sub else f"• {lbl}"
+                lines = _wrap(txt, f_bullet, text_width, dd)
+                h += len(lines) * LINE_H_B + 5
+            h += INNER                     # bottom padding
             return h
 
-        section_heights = [measure_section(c) for c in categories]
-        total_h = (
-            HDR_H
-            + sum(section_heights)
-            + SEC_GAP * len(categories)
-            + 60    # footer
+        # Measure header
+        title_lines = _wrap(inf_title.upper(), f_title_lg, W - PAD * 2 - 20, dd)
+        sub_lines   = _wrap(subtitle, f_subtitle, W - PAD * 2 - 20, dd) if subtitle else []
+        HDR_H = (
+            HDR_PAD * 2
+            + 32                         # AI badge row
+            + len(title_lines[:3]) * 46  # title lines
+            + (len(sub_lines[:2]) * 28 if sub_lines else 0)
+            + 12
         )
-        # Minimum height
-        total_h = max(total_h, 600)
+        HDR_H = max(HDR_H, 160)
 
-        # ── Create final image ────────────────────────────────────────────────
-        img  = Image.new("RGB", (W, total_h), BG)
+        sec_heights = [measure_section(c) for c in categories]
+        FOOTER_H    = 64
+        total_h = HDR_H + sum(sec_heights) + SEC_GAP * (len(categories) + 1) + FOOTER_H
+        total_h = max(total_h, MIN_H)
+
+        # ── Draw ─────────────────────────────────────────────────────────────
+        img  = Image.new("RGB", (W, total_h), T["BG"])
         draw = ImageDraw.Draw(img)
 
-        # ── Header ────────────────────────────────────────────────────────────
-        draw.rectangle([0, 0, W, HDR_H], fill=HDR_BG)
-        # AI badge
-        draw.rectangle([PAD, 12, PAD + 140, 32], fill="#e74c4c", outline=None)
-        draw.text((PAD + 8, 13), "AI-GENERATED VISUAL", font=_load_font(11, bold=True), fill="#ffffff")
-        # Main title — wrap if needed
-        title_lines = _wrap(inf_title.upper(), f_title, W - PAD * 2 - 20, draw)
-        ty = 38
-        for tl in title_lines[:2]:
-            bbox = draw.textbbox((0, 0), tl, font=f_title)
-            tx = (W - (bbox[2] - bbox[0])) // 2
-            draw.text((tx, ty), tl, font=f_title, fill=TEXT_HDR)
-            ty += 34
-        # Subtitle
-        if subtitle:
-            sub_lines = _wrap(subtitle, f_subtitle, W - PAD * 2, draw)
-            sy = ty + 4
-            for sl in sub_lines[:2]:
-                bbox = draw.textbbox((0, 0), sl, font=f_subtitle)
-                sx = (W - (bbox[2] - bbox[0])) // 2
-                draw.text((sx, sy), sl, font=f_subtitle, fill="#a0aec0")
-                sy += 20
+        # ── Header ───────────────────────────────────────────────────────────
+        draw.rectangle([0, 0, W, HDR_H], fill=T["HDR_BG"])
 
-        # ── Sections ─────────────────────────────────────────────────────────
+        # AI badge pill
+        ai_text = "✦  AI-GENERATED VISUAL"
+        ai_bb   = draw.textbbox((0, 0), ai_text, font=f_ai_badge)
+        ai_w    = ai_bb[2] - ai_bb[0] + 28
+        ai_x    = (W - ai_w) // 2
+        draw.rounded_rectangle([ai_x, HDR_PAD, ai_x + ai_w, HDR_PAD + 26], radius=13, fill="#E53E3E")
+        draw.text((ai_x + 14, HDR_PAD + 5), ai_text, font=f_ai_badge, fill="#ffffff")
+
+        # Title
+        ty = HDR_PAD + 36
+        for line in title_lines[:3]:
+            bb = draw.textbbox((0, 0), line, font=f_title_lg)
+            tx = (W - (bb[2] - bb[0])) // 2
+            draw.text((tx, ty), line, font=f_title_lg, fill=T["HDR_TEXT"])
+            ty += 46
+
+        # Subtitle
+        for line in sub_lines[:2]:
+            bb = draw.textbbox((0, 0), line, font=f_subtitle)
+            sx = (W - (bb[2] - bb[0])) // 2
+            draw.text((sx, ty + 4), line, font=f_subtitle, fill="#a0aec0")
+            ty += 28
+
+        # Thin accent line under header
+        draw.rectangle([PAD, HDR_H - 5, W - PAD, HDR_H - 3], fill="#E53E3E")
+
+        # ── Section cards ─────────────────────────────────────────────────────
         y = HDR_H + SEC_GAP
 
-        for idx, cat in enumerate(categories):
-            sec_h   = section_heights[idx]
-            color   = SECTION_COLORS[idx % len(SECTION_COLORS)]
-            nodes   = cat.get("nodes", [])[:6]
-            label   = cat.get("label", f"Section {idx+1}")
-            icon    = cat.get("icon", "")
+        for i, cat in enumerate(categories):
+            sh     = sec_heights[i]
+            color  = SECTION_COLORS[i % len(SECTION_COLORS)]
+            nodes  = cat.get("nodes", [])[:6]
+            label  = cat.get("label", f"Section {i+1}")
+            icon   = cat.get("icon", "")
+            x0, y0 = PAD, y
+            x1, y1 = W - PAD, y + sh
 
-            # Card background
-            x0, y0, x1, y1 = PAD, y, W - PAD, y + sec_h
-            draw.rectangle([x0, y0, x1, y1], fill=CARD_BG)
-            if CARD_BORDER:
-                draw.rectangle([x0, y0, x1, y1], outline="#e0e0e0", width=1)
+            # Card background + border
+            draw.rounded_rectangle([x0, y0, x1, y1], radius=10, fill=T["CARD_BG"])
+            draw.rounded_rectangle([x0, y0, x1, y1], radius=10,
+                                   outline=T["CARD_BORDER"], width=1)
 
-            # Left color accent bar
-            draw.rectangle([x0, y0, x0 + 6, y1], fill=color)
+            # Left color bar
+            draw.rounded_rectangle([x0, y0, x0 + BAR_W, y1], radius=4, fill=color)
 
-            # Number badge
-            bx, by = x0 + 14, y0 + SECTION_PAD - 2
-            draw.rectangle([bx, by, bx + BADGE_W, by + BADGE_W], fill=color)
-            num_str = str(idx + 1)
-            nb = draw.textbbox((0, 0), num_str, font=f_badge)
+            # ── Badge (number) ────────────────────────────────────────────────
+            bx = x0 + BAR_W + INNER
+            by = y0 + INNER
+            draw.rounded_rectangle(
+                [bx, by, bx + BADGE_SZ, by + BADGE_SZ],
+                radius=8, fill=color
+            )
+            num = str(i + 1)
+            nb  = draw.textbbox((0, 0), num, font=f_badge)
             nw, nh = nb[2] - nb[0], nb[3] - nb[1]
-            draw.text((bx + (BADGE_W - nw) // 2, by + (BADGE_W - nh) // 2 - 2), num_str, font=f_badge, fill="#ffffff")
+            draw.text(
+                (bx + (BADGE_SZ - nw) // 2, by + (BADGE_SZ - nh) // 2 - 1),
+                num, font=f_badge, fill="#ffffff"
+            )
 
-            # Section heading
-            heading    = f"{icon}  {label.upper()}" if icon else label.upper()
-            hx         = x0 + 6 + BADGE_W + 20
-            hy         = y0 + SECTION_PAD + 2
-            draw.text((hx, hy), heading, font=f_sec_name, fill=color)
+            # ── Section heading ───────────────────────────────────────────────
+            hx = bx + BADGE_SZ + 14
+            hy = by + (BADGE_SZ - 26) // 2
+            heading = f"{icon}  {label.upper()}" if icon else label.upper()
+            draw.text((hx, hy), heading, font=f_heading, fill=color)
 
-            # Tags row (node labels as chips)
-            tags      = [n.get("label", "") for n in nodes if n.get("label")]
-            tag_text  = "  |  ".join(tags)
-            tag_y     = hy + 26
-            draw.text((hx, tag_y), tag_text, font=f_tag, fill=SUB_COLOR)
+            # ── Tags row ──────────────────────────────────────────────────────
+            tags     = [n.get("label", "") for n in nodes if n.get("label")]
+            tag_line = "   |   ".join(tags)
+            tag_y    = y0 + INNER + BADGE_SZ + 10
+            tag_x    = x0 + BAR_W + INNER
+            # Tag background pill
+            tag_bb   = draw.textbbox((0, 0), tag_line, font=f_tag)
+            tag_pill_w = min(tag_bb[2] - tag_bb[0] + 24, W - PAD * 2 - BAR_W - INNER * 2)
+            draw.rounded_rectangle(
+                [tag_x, tag_y, tag_x + tag_pill_w, tag_y + LINE_H_T],
+                radius=6,
+                fill=color + "20" if len(color) == 7 else "#f0f0f0",
+            )
+            draw.text((tag_x + 10, tag_y + 4), tag_line, font=f_tag, fill=color)
 
-            # Bullet points (label + sublabel)
-            bullet_x = x0 + 6 + SECTION_PAD + 8
-            bullet_y = tag_y + 22
+            # ── Bullet points ─────────────────────────────────────────────────
+            bul_x = x0 + BAR_W + INNER + 4
+            bul_y = tag_y + LINE_H_T + 8
+
             for node in nodes:
-                lbl  = node.get("label", "")
-                sub  = node.get("sublabel", "")
+                lbl = node.get("label", "")
+                sub = node.get("sublabel", "")
                 full = f"• {lbl}: {sub}" if sub else f"• {lbl}"
-                lines = _wrap(full, f_bullet, W - PAD * 2 - SECTION_PAD * 2 - 14, draw)
-                for li, line in enumerate(lines):
-                    # Bold the label part on first line
-                    draw.text((bullet_x, bullet_y), line, font=f_bullet, fill=FONT_COLOR)
-                    bullet_y += 18
-                bullet_y += 4
+                wrapped = _wrap(full, f_bullet, text_width + BADGE_SZ + 10, draw)
+                for ln_i, ln in enumerate(wrapped):
+                    draw.text((bul_x, bul_y), ln, font=f_bullet, fill=T["BODY_TEXT"])
+                    bul_y += LINE_H_B
+                bul_y += 5
 
             y = y1 + SEC_GAP
 
         # ── Footer ────────────────────────────────────────────────────────────
-        draw.rectangle([0, total_h - 48, W, total_h], fill=HDR_BG)
-        footer_text = "makepost.pro  •  AI-Generated Infographic"
-        fb = draw.textbbox((0, 0), footer_text, font=f_subtitle)
-        fx = (W - (fb[2] - fb[0])) // 2
-        draw.text((fx, total_h - 34), footer_text, font=f_subtitle, fill="#718096")
+        fy = total_h - FOOTER_H
+        draw.rectangle([0, fy, W, total_h], fill=T["FOOTER_BG"])
+
+        # Thin top accent on footer
+        draw.rectangle([0, fy, W, fy + 3], fill="#E53E3E")
+
+        brand = "makepost.pro  •  AI-Generated LinkedIn Infographic"
+        bb    = draw.textbbox((0, 0), brand, font=f_brand)
+        bx    = (W - (bb[2] - bb[0])) // 2
+        draw.text((bx, fy + (FOOTER_H - (bb[3] - bb[1])) // 2), brand,
+                  font=f_brand, fill="#718096")
 
         # ── Save ──────────────────────────────────────────────────────────────
-        safe = __import__("re").sub(r"[^a-zA-Z0-9_-]", "_", title)[:36]
+        safe     = re.sub(r"[^a-zA-Z0-9_-]", "_", title)[:36]
         filename = f"{safe}_{uuid.uuid4().hex[:8]}.png"
-        filepath = os.path.join(IMAGES_DIR, filename)
-        img.save(filepath, "PNG", optimize=True)
-
+        img.save(os.path.join(IMAGES_DIR, filename), "PNG", optimize=True)
         return f"/api/images/{filename}"
 
-    except Exception as e:
+    except Exception as exc:
         import traceback
-        print(f"[Infographic renderer error]: {e}")
+        print(f"[Renderer] Error: {exc}")
         traceback.print_exc()
         return None
