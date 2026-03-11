@@ -7,57 +7,33 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Build frontend
-        run: |
-          cd frontend
-          npm install --silent
-          npm run build
-
-      - name: Set up SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy backend files
-        run: |
-          rsync -az --delete \
-            --exclude='.venv' \
-            --exclude='__pycache__' \
-            --exclude='*.pyc' \
-            --exclude='static/images' \
-            --exclude='local_data.db' \
-            --exclude='.env' \
-            backend/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/linkedin-generator/backend/
-
-      - name: Deploy frontend build
-        run: |
-          rsync -az --delete \
-            frontend/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/linkedin-generator/frontend/dist/
-
-      - name: Restart services
+      - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            cd /var/www/linkedin-generator
+
+            echo "==> Pull latest code"
+            git pull origin main
+
+            echo "==> Sync env file"
+            if [ -f backend.env ]; then cp backend.env backend/.env && echo "Synced backend.env -> backend/.env"; fi
+
             echo "==> Install Python deps"
-            pip install -r /var/www/linkedin-generator/backend/requirements.txt --quiet
+            pip install -r backend/requirements.txt --quiet
+
+            echo "==> Build frontend"
+            cd frontend
+            npm install --silent
+            npm run build
+            cd ..
 
             echo "==> Restart backend"
-            sudo systemctl restart makepost.service
+            sudo systemctl restart makepost-backend
 
             echo "==> Reload nginx"
             sudo nginx -t && sudo systemctl reload nginx
