@@ -56,120 +56,89 @@ async function downloadAIImage(imageUrl, title) {
 }
 
 
-// ── Visual Infographic Renderer ────────────────────────────────────────────────
-function InfographicRenderer({ content, title }) {
+// ── Visual Infographic Renderer (style-aware) ──────────────────────────────────
+const STYLE_THEMES = {
+    'Whiteboard': {
+        bg: '#f0f4ff', hdrBg: '#1a1a2e', hdrText: '#ffffff', accent: '#E53E3E',
+        cardBg: '#ffffff', cardBorder: '#e2e8f0', bodyText: '#2d3748',
+        subtitleColor: '#a0aec0', badgeBg: 'rgba(255,255,255,0.15)', badgeText: '#fca5a5',
+        insightBg: '#1a1a2e', insightText: '#fca5a5', footerBg: '#1a1a2e',
+    },
+    'Corporate Modern': {
+        bg: '#dbeafe', hdrBg: '#1e3a5f', hdrText: '#ffffff', accent: '#3b82f6',
+        cardBg: '#ffffff', cardBorder: '#93c5fd', bodyText: '#1e3a5f',
+        subtitleColor: '#93c5fd', badgeBg: 'rgba(255,255,255,0.15)', badgeText: '#bfdbfe',
+        insightBg: '#1e3a5f', insightText: '#bfdbfe', footerBg: '#1e3a5f',
+    },
+    'Executive Guide': {
+        bg: '#0d1117', hdrBg: '#0d1117', hdrText: '#f0f6fc', accent: '#58a6ff',
+        cardBg: '#161b22', cardBorder: '#30363d', bodyText: '#c9d1d9',
+        subtitleColor: '#8b949e', badgeBg: 'rgba(88,166,255,0.15)', badgeText: '#79c0ff',
+        insightBg: '#161b22', insightText: '#79c0ff', footerBg: '#010409',
+    },
+    'Handwritten Notes': {
+        bg: '#fef9ee', hdrBg: '#2d2d2d', hdrText: '#f5f0dc', accent: '#D69E2E',
+        cardBg: '#fffef5', cardBorder: '#d4c5a9', bodyText: '#3d3520',
+        subtitleColor: '#c8b87a', badgeBg: 'rgba(214,158,46,0.2)', badgeText: '#D69E2E',
+        insightBg: '#2d2d2d', insightText: '#D69E2E', footerBg: '#2d2d2d',
+    },
+};
+
+function InfographicRenderer({ content, title, style = 'Whiteboard' }) {
     const infographic = content?.infographic;
     const categories = infographic?.categories || [];
+    const T = STYLE_THEMES[style] || STYLE_THEMES['Whiteboard'];
+    const SECTION_COLORS = ['#E53E3E','#DD6B20','#2B6CB0','#6B46C1','#276749','#0987A0','#C53030','#C05621','#2C7A7B','#1A365D'];
 
     if (!categories.length) {
-        // Fallback: render hook/body/cta as styled text
         return (
-            <div style={{ fontFamily: 'Georgia, serif', lineHeight: 1.8 }}>
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>{content?.hook}</p>
-                <p style={{ fontSize: 14, color: '#334155', whiteSpace: 'pre-wrap', marginBottom: 12 }}>{content?.body}</p>
-                <p style={{ fontSize: 14, fontStyle: 'italic', color: '#475569', marginBottom: 12 }}>{content?.cta}</p>
-                <p style={{ fontSize: 13, color: '#c54444', fontWeight: 600 }}>{content?.hashtags?.join(' ')}</p>
+            <div style={{ fontFamily: 'Georgia, serif', lineHeight: 1.8, background: T.bg, padding: 20, borderRadius: 20 }}>
+                <p style={{ fontSize: 16, fontWeight: 700, color: T.hdrBg, marginBottom: 12 }}>{content?.hook}</p>
+                <p style={{ fontSize: 14, color: T.bodyText, whiteSpace: 'pre-wrap', marginBottom: 12 }}>{content?.body}</p>
+                <p style={{ fontSize: 14, fontStyle: 'italic', color: T.bodyText, marginBottom: 12 }}>{content?.cta}</p>
             </div>
         );
     }
 
     const infTitle = infographic?.title || title;
-    const infSubtitle = infographic?.subtitle || content?.hook;
+    const infSubtitle = infographic?.subtitle || '';
 
     return (
-        <div style={{
-            fontFamily: "'Segoe UI', system-ui, sans-serif",
-            background: 'linear-gradient(145deg, #fafafa 0%, #f0f4ff 100%)',
-            borderRadius: 20,
-            overflow: 'hidden',
-            border: '2px solid #f8e6e6',
-        }}>
-            {/* ── TITLE BANNER ── */}
-            <div style={{
-                background: 'linear-gradient(135deg, #4d0000, #660000)',
-                padding: '24px 28px 20px',
-                textAlign: 'center',
-                position: 'relative',
-                overflow: 'hidden',
-            }}>
-                <div style={{ position: 'absolute', inset: 0, opacity: 0.08, backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.12)', borderRadius: 30, padding: '4px 16px', marginBottom: 10 }}>
-                        <span style={{ fontSize: 12, color: '#e5a3a3', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>AI Infographic</span>
-                    </div>
-                    <h1 style={{ fontSize: 22, fontWeight: 900, color: 'white', margin: '0 0 8px', lineHeight: 1.3, textTransform: 'uppercase', letterSpacing: 1 }}>
-                        {infTitle}
-                    </h1>
-                    <p style={{ fontSize: 13, color: '#f0c7c7', margin: 0, lineHeight: 1.5 }}>{infSubtitle}</p>
+        <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", background: T.bg, borderRadius: 20, overflow: 'hidden', border: `2px solid ${T.cardBorder}`, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+            {/* Header */}
+            <div style={{ background: T.hdrBg, padding: '22px 24px 18px', textAlign: 'center', borderBottom: `3px solid ${T.accent}` }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: T.badgeBg, borderRadius: 30, padding: '3px 14px', marginBottom: 10, border: `1px solid ${T.accent}40` }}>
+                    <span style={{ fontSize: 11, color: T.badgeText, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>✦ AI-Generated Visual</span>
                 </div>
+                <h2 style={{ fontSize: 20, fontWeight: 900, color: T.hdrText, margin: '0 0 6px', lineHeight: 1.3, textTransform: 'uppercase', letterSpacing: 1 }}>{infTitle}</h2>
+                {infSubtitle && <p style={{ fontSize: 12, color: T.subtitleColor, margin: 0, lineHeight: 1.5 }}>{infSubtitle}</p>}
             </div>
 
-            {/* ── CATEGORY GRID ── */}
-            <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Categories */}
+            <div style={{ padding: '16px 16px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {categories.map((cat, ci) => {
-                    const color = cat.color || ['#c54444', '#f59e0b', '#10b981', '#ef4444', '#3b82f6'][ci % 5];
-                    const nodes = cat.nodes || [];
+                    const color = SECTION_COLORS[ci % SECTION_COLORS.length];
+                    const nodes = (cat.nodes || []).slice(0, 4);
                     return (
-                        <motion.div
-                            key={ci}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: ci * 0.1, duration: 0.35 }}
-                            style={{
-                                borderRadius: 16,
-                                border: `2px solid ${color}30`,
-                                overflow: 'hidden',
-                                boxShadow: `0 2px 12px ${color}15`,
-                            }}
-                        >
-                            {/* Category Header */}
-                            <div style={{
-                                background: color,
-                                padding: '11px 18px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 10,
-                            }}>
-                                <span style={{ fontSize: 20 }}>{cat.icon}</span>
-                                <span style={{ fontSize: 14, fontWeight: 800, color: 'white', letterSpacing: 0.5 }}>
-                                    {cat.label?.toUpperCase()}
-                                </span>
-                                <div style={{ marginLeft: 'auto', width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <motion.div key={ci} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.04, duration: 0.25 }}
+                            style={{ borderRadius: 12, border: `1.5px solid ${T.cardBorder}`, overflow: 'hidden', background: T.cardBg }}>
+                            {/* Section header row */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', borderLeft: `4px solid ${color}`, borderBottom: `1px solid ${T.cardBorder}` }}>
+                                <div style={{ width: 22, height: 22, borderRadius: 6, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                     <span style={{ fontSize: 11, fontWeight: 900, color: 'white' }}>{ci + 1}</span>
                                 </div>
+                                <span style={{ fontSize: 12, fontWeight: 800, color: color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                    {cat.icon && `${cat.icon} `}{cat.label}
+                                </span>
                             </div>
-
-                            {/* Nodes Grid */}
-                            <div style={{
-                                background: `${color}08`,
-                                padding: '14px 16px',
-                                display: 'grid',
-                                gridTemplateColumns: nodes.length > 2 ? 'repeat(3, 1fr)' : `repeat(${nodes.length}, 1fr)`,
-                                gap: 10,
-                            }}>
+                            {/* Bullets */}
+                            <div style={{ padding: '8px 14px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 {nodes.map((node, ni) => (
-                                    <div key={ni} style={{
-                                        background: 'white',
-                                        borderRadius: 12,
-                                        padding: '11px 13px',
-                                        border: `1.5px solid ${color}25`,
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                                        position: 'relative',
-                                        overflow: 'hidden',
-                                    }}>
-                                        <div style={{
-                                            position: 'absolute', top: 0, left: 0, width: 3, height: '100%',
-                                            background: color, borderRadius: '2px 0 0 2px',
-                                        }} />
-                                        <div style={{ paddingLeft: 8 }}>
-                                            <div style={{ fontSize: 12, fontWeight: 800, color: '#0f172a', lineHeight: 1.4, marginBottom: 3 }}>
-                                                {node.label}
-                                            </div>
-                                            {node.sublabel && (
-                                                <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.4 }}>
-                                                    {node.sublabel}
-                                                </div>
-                                            )}
+                                    <div key={ni} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                                        <span style={{ color: color, fontWeight: 900, fontSize: 12, lineHeight: '18px', flexShrink: 0 }}>•</span>
+                                        <div>
+                                            <span style={{ fontSize: 11, fontWeight: 700, color: T.bodyText }}>{node.label}</span>
+                                            {node.sublabel && <span style={{ fontSize: 11, color: T.bodyText, opacity: 0.7 }}>{': '}{node.sublabel}</span>}
                                         </div>
                                     </div>
                                 ))}
@@ -179,44 +148,10 @@ function InfographicRenderer({ content, title }) {
                 })}
             </div>
 
-            {/* ── HOOK QUOTE ── */}
-            <div style={{ padding: '0 20px 16px' }}>
-                <div style={{
-                    background: 'linear-gradient(135deg, #4d0000, #660000)',
-                    borderRadius: 14,
-                    padding: '14px 18px',
-                    display: 'flex',
-                    gap: 12,
-                    alignItems: 'flex-start',
-                }}>
-                    <span style={{ fontSize: 28, lineHeight: 1, marginTop: 2 }}>💡</span>
-                    <div>
-                        <p style={{ fontSize: 13, color: '#f0c7c7', fontWeight: 600, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: 1, fontSize: 10 }}>KEY INSIGHT</p>
-                        <p style={{ fontSize: 13, color: 'white', margin: 0, lineHeight: 1.6, fontStyle: 'italic' }}>{content?.hook}</p>
-                    </div>
-                </div>
+            {/* Footer */}
+            <div style={{ padding: '10px 16px', textAlign: 'center', background: T.footerBg, marginTop: 8 }}>
+                <span style={{ fontSize: 10, color: T.subtitleColor, fontWeight: 600, letterSpacing: 1 }}>makepost.pro • AI-Generated LinkedIn Infographic</span>
             </div>
-
-            {/* ── CTA ── */}
-            <div style={{ padding: '0 20px 14px' }}>
-                <div style={{ background: '#f0fdf4', borderRadius: 12, padding: '12px 16px', border: '1.5px solid #bbf7d0', display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <span style={{ fontSize: 18 }}>🎯</span>
-                    <p style={{ fontSize: 13, color: '#065f46', fontWeight: 600, margin: 0, lineHeight: 1.5 }}>{content?.cta}</p>
-                </div>
-            </div>
-
-            {/* ── HASHTAGS ── */}
-            {content?.hashtags?.length > 0 && (
-                <div style={{ padding: '0 20px 20px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {content.hashtags.map((tag, i) => (
-                        <span key={i} style={{
-                            padding: '5px 12px', borderRadius: 20,
-                            background: 'linear-gradient(135deg, #f8e6e6, #ddd6fe)',
-                            color: '#4338ca', fontSize: 12, fontWeight: 700,
-                        }}>{tag}</span>
-                    ))}
-                </div>
-            )}
         </div>
     );
 }
@@ -592,34 +527,28 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                 {result ? (
                                     <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
 
-                                        {/* 1. TOP: AI IMAGE & DOWNLOAD */}
-                                        {c?.infographic_image_url && (
-                                            <div style={{ marginBottom: 48, textAlign: 'center' }}>
-                                                <div style={{ position: 'relative', display: 'inline-block', maxWidth: '90%' }}>
-                                                    <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                                                        <Image size={22} color="#c54444" />
-                                                        <h2 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase', letterSpacing: 1.5 }}>AI-Generated Visual</h2>
-                                                        {(c?.style || lastGeneratedStyle) && (
-                                                            <span style={{ fontSize: 11, fontWeight: 700, color: '#7c3aed', background: '#f3e8ff', border: '1px solid #ddd6fe', borderRadius: 20, padding: '3px 10px', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                                                                {STYLES.find(s => s.id === (c?.style || lastGeneratedStyle))?.label || (c?.style || lastGeneratedStyle)}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <img src={c.infographic_image_url} alt="AI Infographic"
-                                                        style={{ width: '100%', borderRadius: 24, boxShadow: '0 20px 50px rgba(0,0,0,0.18)', border: '1px solid #f8e6e6' }}
-                                                    />
-                                                    <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center' }}>
-                                                        <button onClick={() => downloadAIImage(c?.infographic_image_url, formData.title)}
-                                                            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 36px', borderRadius: 20, border: 'none', background: 'linear-gradient(135deg,#c54444,#a82c2c)', color: 'white', fontSize: 16, fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 25px rgba(197,68,68,0.4)', transition: 'all 0.3s' }}
-                                                            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-3px)'}
-                                                            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
-                                                        >
-                                                            <Download size={22} /> Download High-Res Image
-                                                        </button>
-                                                    </div>
-                                                </div>
+                                        {/* 1. TOP: LIVE INFOGRAPHIC PREVIEW + DOWNLOAD */}
+                                        <div style={{ marginBottom: 48 }}>
+                                            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                                                <Image size={22} color="#c54444" />
+                                                <h2 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase', letterSpacing: 1.5 }}>AI-Generated Visual</h2>
+                                                <span style={{ fontSize: 11, fontWeight: 700, color: '#7c3aed', background: '#f3e8ff', border: '1px solid #ddd6fe', borderRadius: 20, padding: '3px 10px', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                                                    {STYLES.find(s => s.id === infographicStyle)?.label || infographicStyle}
+                                                </span>
                                             </div>
-                                        )}
+                                            <InfographicRenderer content={c} title={formData.title} style={infographicStyle} />
+                                            {c?.infographic_image_url && (
+                                                <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center' }}>
+                                                    <button onClick={() => downloadAIImage(c?.infographic_image_url, formData.title)}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 36px', borderRadius: 20, border: 'none', background: 'linear-gradient(135deg,#c54444,#a82c2c)', color: 'white', fontSize: 16, fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 25px rgba(197,68,68,0.4)', transition: 'all 0.3s' }}
+                                                        onMouseOver={e => e.currentTarget.style.transform = 'translateY(-3px)'}
+                                                        onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                                                    >
+                                                        <Download size={22} /> Download High-Res Image
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
 
                                         {/* 3. BOTTOM: CLEAN TEXTUAL FLOW */}
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 32, maxWidth: 800, margin: '0 auto' }}>
