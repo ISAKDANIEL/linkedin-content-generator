@@ -270,13 +270,13 @@ function ExecutiveRenderer({ infographic, title }) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   HANDWRITTEN NOTES — Hub-and-spoke whiteboard diagram (matches reference image)
-   TOP: central hub circle + surrounding category boxes + SVG dashed arrows
-   BOTTOM: two panels with floating colored labels (like reference)
+   HANDWRITTEN NOTES — Whiteboard Sketchnote
+   Pure flow layout (no absolute positioning): top spokes / middle row / bottom
+   spokes connected by dashed CSS lines. Always renders correctly.
 ══════════════════════════════════════════════════════════════════════════════ */
 function HandwrittenRenderer({ infographic, title }) {
     const categories = infographic?.categories || [];
-    const infTitle = infographic?.title || title;
+    const infTitle   = infographic?.title || title;
     const infSubtitle = infographic?.subtitle || '';
 
     const LC = [
@@ -289,35 +289,43 @@ function HandwrittenRenderer({ infographic, title }) {
         { bg: '#fed7aa', bd: '#ea580c' },
         { bg: '#fbcfe8', bd: '#db2777' },
     ];
-    const ICONS = ['🤖','💡','⚙️','🧠','👁️','🌐','📊','🎯','🔧','⚡','🚀','💎'];
+    const ICONS = ['💡','⚙️','🧠','👁️','🌐','📊','🎯','🔧','⚡','🚀','💎','🔑'];
 
-    // First 6 → hub spokes. Rest → bottom two panels.
-    const hubCount = Math.min(categories.length, 6);
-    const hubCats = categories.slice(0, hubCount);
-    const botCats = categories.slice(hubCount);
+    // First 6 → hub diagram (2 top, 2 sides, 2 bottom). Rest → bottom panels.
+    const hub    = categories.slice(0, 6);
+    const botCats = categories.slice(6);
+    const top    = hub.slice(0, 2);
+    const left   = hub[2] || null;
+    const right  = hub[3] || null;
+    const bottom = hub.slice(4, 6);
     const botLeft  = botCats.filter((_, i) => i % 2 === 0);
     const botRight = botCats.filter((_, i) => i % 2 === 1);
 
-    // Spoke positions — kept well inside the container (15–85%) so nothing clips
-    const SPOKE_POS = [
-        { cx: 50, cy: 13 },  // top
-        { cx: 82, cy: 30 },  // top-right
-        { cx: 82, cy: 70 },  // bottom-right
-        { cx: 50, cy: 86 },  // bottom
-        { cx: 18, cy: 70 },  // bottom-left
-        { cx: 18, cy: 30 },  // top-left
-    ];
-
-    // Floating-label section box (used in bottom panels)
-    const FloatBox = ({ cat, ci, style: extraStyle }) => {
+    // Small card for hub spokes
+    const SpokeCard = ({ cat, ci }) => {
         const lc = LC[ci % LC.length];
-        const nodes = (cat.nodes || []).slice(0, 4);
-        const icon = cat.icon || ICONS[ci % ICONS.length];
+        const icon = cat?.icon || ICONS[ci % ICONS.length];
+        const nodes = (cat?.nodes || []).slice(0, 2);
         return (
-            <div style={{ position: 'relative', border: `2px solid ${lc.bd}`, borderRadius: 7, padding: '18px 10px 10px', marginBottom: 10, ...extraStyle }}>
-                <div style={{ position: 'absolute', top: -12, left: 8, background: lc.bg, border: `2px solid ${lc.bd}`, borderRadius: 5, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: ci * 0.06 }}
+                style={{ background: lc.bg, border: `2.5px solid ${lc.bd}`, borderRadius: 8, padding: '6px 8px', textAlign: 'center', minWidth: 80, maxWidth: 110, boxShadow: '2px 2px 5px rgba(0,0,0,0.1)' }}>
+                <div style={{ fontSize: 18, lineHeight: 1, marginBottom: 2 }}>{icon}</div>
+                <div style={{ fontSize: 9, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', fontFamily: "'Arial Black',sans-serif", lineHeight: 1.3 }}>{cat?.label}</div>
+                {nodes.map((n, ni) => <div key={ni} style={{ fontSize: 8, color: '#333', fontFamily: 'Arial,sans-serif', lineHeight: 1.3, marginTop: 1 }}>{n.label}</div>)}
+            </motion.div>
+        );
+    };
+
+    // Floating-label box for bottom panels
+    const FloatBox = ({ cat, ci }) => {
+        const lc = LC[ci % LC.length];
+        const icon = cat?.icon || ICONS[ci % ICONS.length];
+        const nodes = (cat?.nodes || []).slice(0, 4);
+        return (
+            <div style={{ position: 'relative', border: `2px solid ${lc.bd}`, borderRadius: 7, padding: '18px 10px 10px', marginBottom: 10 }}>
+                <div style={{ position: 'absolute', top: -12, left: 8, background: lc.bg, border: `2px solid ${lc.bd}`, borderRadius: 5, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 4, zIndex: 1 }}>
                     <span style={{ fontSize: 12 }}>{icon}</span>
-                    <span style={{ fontSize: 10, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.4, fontFamily: "'Arial Black',sans-serif", whiteSpace: 'nowrap' }}>{cat.label}</span>
+                    <span style={{ fontSize: 9.5, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.3, fontFamily: "'Arial Black',sans-serif", whiteSpace: 'nowrap' }}>{cat?.label}</span>
                 </div>
                 {nodes.map((n, ni) => (
                     <div key={ni} style={{ display: 'flex', gap: 5, alignItems: 'flex-start', marginBottom: 4 }}>
@@ -331,13 +339,22 @@ function HandwrittenRenderer({ infographic, title }) {
         );
     };
 
+    // Dashed vertical connector bar
+    const DashV = ({ count = 1 }) => (
+        <div style={{ display: 'flex', justifyContent: count === 2 ? 'space-around' : 'center', padding: '0 20px' }}>
+            {Array.from({ length: count }).map((_, i) => (
+                <div key={i} style={{ width: 2, height: 18, borderLeft: '2.5px dashed #888' }} />
+            ))}
+        </div>
+    );
+
     return (
         <div style={{ fontFamily: "'Arial Black',Impact,sans-serif", background: '#fff', borderRadius: 14, border: '4px solid #1a1a1a', boxShadow: '6px 6px 0 #bbb', overflow: 'hidden' }}>
 
             {/* ── TITLE ── */}
             <div style={{ padding: '16px 20px 12px', textAlign: 'center', borderBottom: '3px solid #1a1a1a' }}>
-                <h1 style={{ fontSize: 22, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 2, lineHeight: 1.1, margin: '0 0 5px' }}>{infTitle}</h1>
-                <div style={{ width: '82%', height: 3, background: '#1a1a1a', margin: '0 auto 10px', borderRadius: 2 }} />
+                <h1 style={{ fontSize: 22, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 2, lineHeight: 1.1, margin: '0 0 5px', fontFamily: "'Arial Black',Impact,sans-serif" }}>{infTitle}</h1>
+                <div style={{ width: '80%', height: 3, background: '#1a1a1a', margin: '0 auto 10px', borderRadius: 2 }} />
                 {infSubtitle && (
                     <div style={{ display: 'inline-block', background: '#bfdbfe', border: '2px solid #1a1a1a', borderRadius: 7, padding: '3px 18px' }}>
                         <span style={{ fontSize: 11, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: 'Arial,sans-serif' }}>{infSubtitle}</span>
@@ -345,84 +362,58 @@ function HandwrittenRenderer({ infographic, title }) {
                 )}
             </div>
 
-            {/* ── HUB DIAGRAM ── */}
-            <div style={{ margin: '10px', border: '2px solid #444', borderRadius: 8, position: 'relative', height: 340, background: '#fff', overflow: 'visible' }}>
+            {/* ── HUB DIAGRAM (flow layout, no absolute positions) ── */}
+            <div style={{ margin: '10px', border: '2px solid #555', borderRadius: 8, padding: '12px 8px 14px', background: '#fff' }}>
 
-                {/* SVG dashed arrows from center to each spoke */}
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none"
-                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-                    <defs>
-                        <marker id="arr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto">
-                            <polygon points="0,0 5,2.5 0,5" fill="#555" />
-                        </marker>
-                    </defs>
-                    {hubCats.map((_, i) => {
-                        const p = SPOKE_POS[i % SPOKE_POS.length];
-                        // Shorten line so it doesn't overlap the boxes
-                        const dx = p.cx - 50, dy = p.cy - 50;
-                        const len = Math.sqrt(dx*dx + dy*dy);
-                        const r = 8; // radius to stop short of spoke box
-                        const ex = p.cx - (dx / len) * r;
-                        const ey = p.cy - (dy / len) * r;
-                        return (
-                            <line key={i} x1="50" y1="50" x2={ex} y2={ey}
-                                stroke="#555" strokeWidth="0.7" strokeDasharray="2,1.5"
-                                markerEnd="url(#arr)" />
-                        );
-                    })}
-                </svg>
-
-                {/* Center circle */}
-                <div style={{
-                    position: 'absolute', left: '50%', top: '50%',
-                    transform: 'translate(-50%,-50%)', zIndex: 10,
-                    width: 76, height: 76, borderRadius: '50%',
-                    border: '3px solid #16a34a', background: '#fff',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.13)'
-                }}>
-                    <div style={{ fontSize: 24 }}>🤖</div>
-                    <div style={{ fontSize: 8, fontWeight: 900, color: '#14532d', lineHeight: 1.2, textTransform: 'uppercase', maxWidth: 60 }}>
-                        {(infTitle || '').split(' ').slice(0,3).join(' ')}
+                {/* TOP ROW: 2 spokes */}
+                {top.length > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: 0 }}>
+                        {top.map((cat, i) => <SpokeCard key={i} cat={cat} ci={i} />)}
                     </div>
+                )}
+
+                {/* Vertical connectors top → hub */}
+                {top.length > 0 && <DashV count={top.length} />}
+
+                {/* MIDDLE ROW: left spoke ——— hub ——— right spoke */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {left && <SpokeCard cat={left} ci={2} />}
+                    <div style={{ flex: 1, borderTop: '2.5px dashed #888', minWidth: 6 }} />
+
+                    {/* Hub circle */}
+                    <div style={{
+                        width: 82, height: 82, borderRadius: '50%', flexShrink: 0,
+                        border: '3px solid #16a34a', background: '#fff',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.12)'
+                    }}>
+                        <div style={{ fontSize: 26 }}>🤖</div>
+                        <div style={{ fontSize: 7.5, fontWeight: 900, color: '#14532d', textTransform: 'uppercase', lineHeight: 1.2, maxWidth: 64, fontFamily: "'Arial Black',sans-serif" }}>
+                            {(infTitle || '').split(' ').slice(0, 3).join(' ')}
+                        </div>
+                    </div>
+
+                    <div style={{ flex: 1, borderTop: '2.5px dashed #888', minWidth: 6 }} />
+                    {right && <SpokeCard cat={right} ci={3} />}
                 </div>
 
-                {/* Spoke boxes */}
-                {hubCats.map((cat, i) => {
-                    const pos = SPOKE_POS[i % SPOKE_POS.length];
-                    const lc = LC[i % LC.length];
-                    const icon = cat.icon || ICONS[i % ICONS.length];
-                    const mainItem = cat.nodes?.[0]?.label || '';
-                    const subItem  = cat.nodes?.[1]?.label || '';
-                    return (
-                        <motion.div key={i} initial={{ opacity: 0, scale: 0.75 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.07, type: 'spring', stiffness: 200 }}
-                            style={{
-                                position: 'absolute',
-                                left: `${pos.cx}%`, top: `${pos.cy}%`,
-                                transform: 'translate(-50%,-50%)',
-                                zIndex: 5, width: 82,
-                                background: lc.bg, border: `2px solid ${lc.bd}`,
-                                borderRadius: 6, padding: '5px 6px 6px',
-                                textAlign: 'center',
-                                boxShadow: '2px 2px 6px rgba(0,0,0,0.14)'
-                            }}>
-                            <div style={{ fontSize: 15, lineHeight: 1 }}>{icon}</div>
-                            <div style={{ fontSize: 8.5, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.2, fontFamily: "'Arial Black',sans-serif", lineHeight: 1.3, wordBreak: 'break-word' }}>{cat.label}</div>
-                            {mainItem && <div style={{ fontSize: 7.5, color: '#222', fontFamily: 'Arial,sans-serif', lineHeight: 1.3, marginTop: 2, wordBreak: 'break-word' }}>{mainItem}</div>}
-                            {subItem  && <div style={{ fontSize: 7.5, color: '#555', fontFamily: 'Arial,sans-serif', lineHeight: 1.3, wordBreak: 'break-word' }}>{subItem}</div>}
-                        </motion.div>
-                    );
-                })}
+                {/* Vertical connectors hub → bottom */}
+                {bottom.length > 0 && <DashV count={bottom.length} />}
+
+                {/* BOTTOM ROW: 2 spokes */}
+                {bottom.length > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 0 }}>
+                        {bottom.map((cat, i) => <SpokeCard key={i} cat={cat} ci={4 + i} />)}
+                    </div>
+                )}
             </div>
 
             {/* ── BOTTOM PANELS ── */}
             {botCats.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', margin: '10px 10px 10px', border: '2px solid #444', borderRadius: 8, overflow: 'visible', background: '#fff', gap: 0 }}>
-                    {/* Left panel */}
-                    <div style={{ padding: '18px 12px 12px', borderRight: '2px solid #444' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', margin: '0 10px 10px', border: '2px solid #555', borderRadius: 8, background: '#fff' }}>
+                    <div style={{ padding: '18px 12px 12px', borderRight: '2px solid #555' }}>
                         {botLeft.map((cat, i) => <FloatBox key={i} cat={cat} ci={i * 2} />)}
                     </div>
-                    {/* Right panel */}
                     <div style={{ padding: '18px 12px 12px' }}>
                         {botRight.map((cat, i) => <FloatBox key={i} cat={cat} ci={i * 2 + 1} />)}
                     </div>
