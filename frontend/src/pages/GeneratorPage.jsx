@@ -298,15 +298,14 @@ function HandwrittenRenderer({ infographic, title }) {
     const botLeft  = botCats.filter((_, i) => i % 2 === 0);
     const botRight = botCats.filter((_, i) => i % 2 === 1);
 
-    // Spoke positions (cx, cy as 0–100 percentages of the hub box)
-    // 6 positions evenly around center, offset to look like reference
+    // Spoke positions — kept well inside the container (15–85%) so nothing clips
     const SPOKE_POS = [
-        { cx: 50, cy:  8 },  // top
-        { cx: 88, cy: 28 },  // top-right
-        { cx: 88, cy: 72 },  // bottom-right
-        { cx: 50, cy: 90 },  // bottom
-        { cx: 12, cy: 72 },  // bottom-left
-        { cx: 12, cy: 28 },  // top-left
+        { cx: 50, cy: 13 },  // top
+        { cx: 82, cy: 30 },  // top-right
+        { cx: 82, cy: 70 },  // bottom-right
+        { cx: 50, cy: 86 },  // bottom
+        { cx: 18, cy: 70 },  // bottom-left
+        { cx: 18, cy: 30 },  // top-left
     ];
 
     // Floating-label section box (used in bottom panels)
@@ -347,7 +346,7 @@ function HandwrittenRenderer({ infographic, title }) {
             </div>
 
             {/* ── HUB DIAGRAM ── */}
-            <div style={{ margin: '10px', border: '2px solid #444', borderRadius: 8, position: 'relative', height: 310, background: '#fff', overflow: 'hidden' }}>
+            <div style={{ margin: '10px', border: '2px solid #444', borderRadius: 8, position: 'relative', height: 340, background: '#fff', overflow: 'visible' }}>
 
                 {/* SVG dashed arrows from center to each spoke */}
                 <svg viewBox="0 0 100 100" preserveAspectRatio="none"
@@ -401,16 +400,16 @@ function HandwrittenRenderer({ infographic, title }) {
                                 position: 'absolute',
                                 left: `${pos.cx}%`, top: `${pos.cy}%`,
                                 transform: 'translate(-50%,-50%)',
-                                zIndex: 5, maxWidth: 88, minWidth: 60,
+                                zIndex: 5, width: 82,
                                 background: lc.bg, border: `2px solid ${lc.bd}`,
-                                borderRadius: 6, padding: '4px 7px 5px',
+                                borderRadius: 6, padding: '5px 6px 6px',
                                 textAlign: 'center',
-                                boxShadow: '1px 2px 5px rgba(0,0,0,0.12)'
+                                boxShadow: '2px 2px 6px rgba(0,0,0,0.14)'
                             }}>
-                            <div style={{ fontSize: 16, lineHeight: 1 }}>{icon}</div>
-                            <div style={{ fontSize: 9, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.3, fontFamily: "'Arial Black',sans-serif", lineHeight: 1.25 }}>{cat.label}</div>
-                            {mainItem && <div style={{ fontSize: 8, color: '#333', fontFamily: 'Arial,sans-serif', lineHeight: 1.3, marginTop: 2 }}>{mainItem}</div>}
-                            {subItem  && <div style={{ fontSize: 8, color: '#555', fontFamily: 'Arial,sans-serif', lineHeight: 1.3 }}>{subItem}</div>}
+                            <div style={{ fontSize: 15, lineHeight: 1 }}>{icon}</div>
+                            <div style={{ fontSize: 8.5, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.2, fontFamily: "'Arial Black',sans-serif", lineHeight: 1.3, wordBreak: 'break-word' }}>{cat.label}</div>
+                            {mainItem && <div style={{ fontSize: 7.5, color: '#222', fontFamily: 'Arial,sans-serif', lineHeight: 1.3, marginTop: 2, wordBreak: 'break-word' }}>{mainItem}</div>}
+                            {subItem  && <div style={{ fontSize: 7.5, color: '#555', fontFamily: 'Arial,sans-serif', lineHeight: 1.3, wordBreak: 'break-word' }}>{subItem}</div>}
                         </motion.div>
                     );
                 })}
@@ -418,13 +417,13 @@ function HandwrittenRenderer({ infographic, title }) {
 
             {/* ── BOTTOM PANELS ── */}
             {botCats.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', margin: '0 10px 10px', border: '2px solid #444', borderRadius: 8, overflow: 'visible', background: '#fff', gap: 0 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', margin: '10px 10px 10px', border: '2px solid #444', borderRadius: 8, overflow: 'visible', background: '#fff', gap: 0 }}>
                     {/* Left panel */}
-                    <div style={{ padding: '14px 10px 10px', borderRight: '2px solid #444', paddingTop: 16 }}>
+                    <div style={{ padding: '18px 12px 12px', borderRight: '2px solid #444' }}>
                         {botLeft.map((cat, i) => <FloatBox key={i} cat={cat} ci={i * 2} />)}
                     </div>
                     {/* Right panel */}
-                    <div style={{ padding: '14px 10px 10px', paddingTop: 16 }}>
+                    <div style={{ padding: '18px 12px 12px' }}>
                         {botRight.map((cat, i) => <FloatBox key={i} cat={cat} ci={i * 2 + 1} />)}
                     </div>
                 </div>
