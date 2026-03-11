@@ -231,6 +231,7 @@ export default function GeneratorPage() {
     const [infographicStyle, setInfographicStyle] = useState('Whiteboard');
     const [lastGeneratedStyle, setLastGeneratedStyle] = useState(null);
     const [showPostDetails, setShowPostDetails] = useState(true);
+    const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
     const [result, setResult] = useState(null);
     const [credits, setCredits] = useState(null);
     const [noCreditsModal, setNoCreditsModal] = useState(false);
@@ -459,31 +460,76 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                 </AnimatePresence>
                             </div>
 
-                            {/* Style Selection — Clickable Cards */}
+                            {/* Style Selection — Dropdown */}
                             <div style={{ backgroundColor: 'white', borderRadius: 24, padding: '20px 24px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-                                <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#c54444', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 12 }}>Visual Style</label>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                                    {STYLES.map(s => {
-                                        const selected = infographicStyle === s.id;
-                                        return (
-                                            <div
-                                                key={s.id}
-                                                onClick={() => setInfographicStyle(s.id)}
-                                                style={{
-                                                    padding: '10px 12px',
-                                                    borderRadius: 12,
-                                                    border: selected ? '2px solid #c54444' : '2px solid #e2e8f0',
-                                                    background: selected ? '#fef2f2' : '#f8fafc',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.15s',
-                                                    userSelect: 'none',
-                                                }}
-                                            >
-                                                <div style={{ fontSize: 12, fontWeight: 700, color: selected ? '#c54444' : '#1e293b', marginBottom: 2 }}>{s.label}</div>
-                                                <div style={{ fontSize: 10, color: selected ? '#ef4444' : '#94a3b8' }}>{s.desc}</div>
-                                            </div>
-                                        );
-                                    })}
+                                <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#c54444', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 }}>Visual Style</label>
+                                <div style={{ position: 'relative' }}>
+                                    {/* Trigger */}
+                                    <button
+                                        type="button"
+                                        onMouseDown={() => setStyleDropdownOpen(o => !o)}
+                                        onBlur={() => setTimeout(() => setStyleDropdownOpen(false), 150)}
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '12px 16px',
+                                            borderRadius: 14,
+                                            border: styleDropdownOpen ? '2px solid #c54444' : '2px solid #e2e8f0',
+                                            background: '#f8fafc',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            fontFamily: 'inherit',
+                                        }}
+                                    >
+                                        <div style={{ textAlign: 'left' }}>
+                                            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>{STYLES.find(s => s.id === infographicStyle)?.label}</div>
+                                            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{STYLES.find(s => s.id === infographicStyle)?.desc}</div>
+                                        </div>
+                                        <ChevronDown size={16} color="#94a3b8" style={{ transform: styleDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }} />
+                                    </button>
+
+                                    {/* Dropdown List */}
+                                    {styleDropdownOpen && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: 'calc(100% + 4px)',
+                                            left: 0,
+                                            right: 0,
+                                            background: 'white',
+                                            borderRadius: 14,
+                                            border: '1.5px solid #e2e8f0',
+                                            boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                                            zIndex: 200,
+                                            overflow: 'hidden',
+                                        }}>
+                                            {STYLES.map((s, i) => {
+                                                const selected = infographicStyle === s.id;
+                                                return (
+                                                    <div
+                                                        key={s.id}
+                                                        onMouseDown={e => {
+                                                            e.preventDefault(); // prevent trigger blur from firing first
+                                                            setInfographicStyle(s.id);
+                                                            setStyleDropdownOpen(false);
+                                                        }}
+                                                        style={{
+                                                            padding: '11px 16px',
+                                                            background: selected ? '#fef2f2' : 'white',
+                                                            borderBottom: i < STYLES.length - 1 ? '1px solid #f1f5f9' : 'none',
+                                                            cursor: 'pointer',
+                                                        }}
+                                                        onMouseEnter={e => { if (!selected) e.currentTarget.style.background = '#f8fafc'; }}
+                                                        onMouseLeave={e => { if (!selected) e.currentTarget.style.background = 'white'; }}
+                                                    >
+                                                        <div style={{ fontSize: 13, fontWeight: 700, color: selected ? '#c54444' : '#1e293b' }}>{s.label}</div>
+                                                        <div style={{ fontSize: 11, color: selected ? '#ef4444' : '#94a3b8', marginTop: 2 }}>{s.desc}</div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
