@@ -232,6 +232,7 @@ export default function GeneratorPage() {
     const [lastGeneratedStyle, setLastGeneratedStyle] = useState(null);
     const [showPostDetails, setShowPostDetails] = useState(true);
     const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
+    const [toneDropdownOpen, setToneDropdownOpen] = useState(false);
     const [result, setResult] = useState(null);
     const [credits, setCredits] = useState(null);
     const [noCreditsModal, setNoCreditsModal] = useState(false);
@@ -246,6 +247,8 @@ export default function GeneratorPage() {
         { id: 'Executive Guide', label: 'Executive Guide', Icon: Zap, desc: 'Stacked vibrant guide' },
         { id: 'Handwritten Notes', label: 'Handwritten Notes', Icon: MessageSquare, desc: 'Pen on notebook paper' },
     ];
+
+    const TONES = ['Professional', 'Casual', 'Inspirational', 'Educational', 'Humorous', 'Formal', 'Conversational', 'Storytelling', 'Data-Driven', 'Motivational'];
 
     const loadHistoryItem = useCallback(async (id) => {
         setCurrentHistoryId(id);
@@ -443,10 +446,35 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                             </div>
                                             <div style={{ marginBottom: 16 }}>
                                                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Tone</label>
-                                                <select value={formData.tone} onChange={e => setFormData(f => ({ ...f, tone: e.target.value }))}
-                                                    style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1.5px solid #e2e8f0', fontSize: 14, background: 'white' }}>
-                                                    {['Professional', 'Inspiring', 'Educational', 'Bold'].map(t => <option key={t}>{t}</option>)}
-                                                </select>
+                                                <div style={{ position: 'relative' }}>
+                                                    <button
+                                                        type="button"
+                                                        onMouseDown={() => setToneDropdownOpen(o => !o)}
+                                                        onBlur={() => setTimeout(() => setToneDropdownOpen(false), 150)}
+                                                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 14, border: toneDropdownOpen ? '1.5px solid #c54444' : '1.5px solid #e2e8f0', background: 'white', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: '#1e293b' }}
+                                                    >
+                                                        <span>{formData.tone}</span>
+                                                        <ChevronDown size={16} color="#94a3b8" style={{ transform: toneDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }} />
+                                                    </button>
+                                                    {toneDropdownOpen && (
+                                                        <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, background: 'white', borderRadius: 14, border: '1.5px solid #e2e8f0', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', zIndex: 200, overflow: 'hidden', maxHeight: 220, overflowY: 'auto' }}>
+                                                            {TONES.map((t, i) => {
+                                                                const selected = formData.tone === t;
+                                                                return (
+                                                                    <div
+                                                                        key={t}
+                                                                        onMouseDown={e => { e.preventDefault(); setFormData(f => ({ ...f, tone: t })); setToneDropdownOpen(false); }}
+                                                                        style={{ padding: '11px 16px', fontSize: 14, fontWeight: selected ? 700 : 400, color: selected ? '#c54444' : '#1e293b', background: selected ? '#fef2f2' : 'white', borderBottom: i < TONES.length - 1 ? '1px solid #f1f5f9' : 'none', cursor: 'pointer' }}
+                                                                        onMouseEnter={e => { if (!selected) e.currentTarget.style.background = '#f8fafc'; }}
+                                                                        onMouseLeave={e => { if (!selected) e.currentTarget.style.background = selected ? '#fef2f2' : 'white'; }}
+                                                                    >
+                                                                        {t}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                             <div>
                                                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Target Audience</label>
