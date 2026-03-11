@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wand2, Loader2, Copy, RefreshCw, Download, Check, Image, FileText, Palette, Zap, MessageSquare, Target, Hash, ChevronDown, ChevronUp, ShoppingCart } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -231,27 +231,13 @@ export default function GeneratorPage() {
     const [infographicStyle, setInfographicStyle] = useState('Whiteboard');
     const [lastGeneratedStyle, setLastGeneratedStyle] = useState(null);
     const [showPostDetails, setShowPostDetails] = useState(true);
-    const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
     const [result, setResult] = useState(null);
     const [credits, setCredits] = useState(null);
     const [noCreditsModal, setNoCreditsModal] = useState(false);
-    const styleDropdownRef = useRef(null);
 
     useEffect(() => {
         paymentAPI.getCredits().then(d => setCredits(d?.credits ?? null)).catch(() => {});
     }, []);
-
-    // Close style dropdown when clicking outside
-    useEffect(() => {
-        if (!styleDropdownOpen) return;
-        const handler = (e) => {
-            if (styleDropdownRef.current && !styleDropdownRef.current.contains(e.target)) {
-                setStyleDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, [styleDropdownOpen]);
 
     const STYLES = [
         { id: 'Whiteboard', label: 'Whiteboard Sketch', Icon: Palette, desc: 'Hand-drawn marker style' },
@@ -473,92 +459,36 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                 </AnimatePresence>
                             </div>
 
-                            {/* Style Selection — Custom Dropdown */}
+                            {/* Style Selection — Clickable Cards */}
                             <div style={{ backgroundColor: 'white', borderRadius: 24, padding: '20px 24px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-                                <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#c54444', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 }}>Visual Style</label>
-                                <div style={{ position: 'relative' }} ref={styleDropdownRef}>
-                                    {/* Trigger */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setStyleDropdownOpen(o => !o)}
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: '12px 16px',
-                                            borderRadius: 14,
-                                            border: styleDropdownOpen ? '2px solid #c54444' : '2px solid #e2e8f0',
-                                            background: '#f8fafc',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                            fontFamily: 'inherit',
-                                        }}
-                                    >
-                                        <div style={{ textAlign: 'left' }}>
-                                            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>{STYLES.find(s => s.id === infographicStyle)?.label}</div>
-                                            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{STYLES.find(s => s.id === infographicStyle)?.desc}</div>
-                                        </div>
-                                        <ChevronDown size={16} color="#94a3b8" style={{ transform: styleDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-                                    </button>
-
-                                    {/* Dropdown List */}
-                                    {styleDropdownOpen && (
-                                        <div style={{
-                                            position: 'absolute',
-                                            top: 'calc(100% + 6px)',
-                                            left: 0,
-                                            right: 0,
-                                            background: 'white',
-                                            borderRadius: 16,
-                                            border: '1.5px solid #e2e8f0',
-                                            boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-                                            zIndex: 100,
-                                            overflow: 'hidden',
-                                        }}>
-                                            {STYLES.map((s, i) => {
-                                                const selected = infographicStyle === s.id;
-                                                return (
-                                                    <button
-                                                        key={s.id}
-                                                        type="button"
-                                                        onClick={() => { setInfographicStyle(s.id); setStyleDropdownOpen(false); }}
-                                                        style={{
-                                                            width: '100%',
-                                                            display: 'flex',
-                                                            flexDirection: 'column',
-                                                            alignItems: 'flex-start',
-                                                            padding: '11px 16px',
-                                                            background: selected ? '#fef2f2' : 'white',
-                                                            borderTop: 'none',
-                                                            borderLeft: 'none',
-                                                            borderRight: 'none',
-                                                            borderBottom: i < STYLES.length - 1 ? '1px solid #f1f5f9' : 'none',
-                                                            cursor: 'pointer',
-                                                            transition: 'background 0.15s',
-                                                            textAlign: 'left',
-                                                            fontFamily: 'inherit',
-                                                        }}
-                                                        onMouseOver={e => { if (!selected) e.currentTarget.style.background = '#f8fafc'; }}
-                                                        onMouseOut={e => { if (!selected) e.currentTarget.style.background = 'white'; }}
-                                                    >
-                                                        <span style={{ fontSize: 13, fontWeight: 700, color: selected ? '#c54444' : '#1e293b' }}>{s.label}</span>
-                                                        <span style={{ fontSize: 11, color: selected ? '#ef4444' : '#94a3b8', marginTop: 1 }}>{s.desc}</span>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
+                                <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#c54444', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 12 }}>Visual Style</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                    {STYLES.map(s => {
+                                        const selected = infographicStyle === s.id;
+                                        return (
+                                            <div
+                                                key={s.id}
+                                                onClick={() => setInfographicStyle(s.id)}
+                                                style={{
+                                                    padding: '10px 12px',
+                                                    borderRadius: 12,
+                                                    border: selected ? '2px solid #c54444' : '2px solid #e2e8f0',
+                                                    background: selected ? '#fef2f2' : '#f8fafc',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.15s',
+                                                    userSelect: 'none',
+                                                }}
+                                            >
+                                                <div style={{ fontSize: 12, fontWeight: 700, color: selected ? '#c54444' : '#1e293b', marginBottom: 2 }}>{s.label}</div>
+                                                <div style={{ fontSize: 10, color: selected ? '#ef4444' : '#94a3b8' }}>{s.desc}</div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
-                            {result && lastGeneratedStyle && infographicStyle !== lastGeneratedStyle && (
-                                <div style={{ fontSize: 12, color: '#b45309', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 10, padding: '8px 14px', textAlign: 'center', fontWeight: 600 }}>
-                                    Style changed to <strong>{STYLES.find(s => s.id === infographicStyle)?.label}</strong> — click Generate to apply
-                                </div>
-                            )}
                             <button onClick={handleSubmit} disabled={loading}
-                                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '16px 24px', borderRadius: 18, background: loading ? '#e5a3a3' : result && lastGeneratedStyle && infographicStyle !== lastGeneratedStyle ? 'linear-gradient(135deg,#d97706,#b45309)' : 'linear-gradient(135deg,#c54444,#a82c2c)', color: 'white', fontWeight: 800, fontSize: 15, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 10px 25px rgba(197,68,68,0.3)', transition: 'all 0.3s' }}
+                                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '16px 24px', borderRadius: 18, background: loading ? '#e5a3a3' : 'linear-gradient(135deg,#c54444,#a82c2c)', color: 'white', fontWeight: 800, fontSize: 15, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 10px 25px rgba(197,68,68,0.3)', transition: 'all 0.3s' }}
                             >
                                 {loading ? <Loader2 className="animate-spin" size={20} /> : result && lastGeneratedStyle && infographicStyle !== lastGeneratedStyle ? <><RefreshCw size={20} /> Regenerate with New Style</> : <><Wand2 size={20} /> Generate Masterpiece</>}
                             </button>
