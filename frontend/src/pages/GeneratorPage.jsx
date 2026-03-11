@@ -229,8 +229,8 @@ export default function GeneratorPage() {
     const [currentHistoryId, setCurrentHistoryId] = useState(null);
     const [formData, setFormData] = useState({ title: '', tone: 'Professional', audience: '' });
     const [infographicStyle, setInfographicStyle] = useState('Whiteboard');
+    const [lastGeneratedStyle, setLastGeneratedStyle] = useState(null);
     const [showPostDetails, setShowPostDetails] = useState(true);
-    const [showStyles, setShowStyles] = useState(false);
     const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
     const [result, setResult] = useState(null);
     const [credits, setCredits] = useState(null);
@@ -267,6 +267,11 @@ export default function GeneratorPage() {
             const item = data.item;
             setFormData({ title: item.title, tone: item.tone || 'Professional', audience: item.audience || '' });
             setResult({ content: item.result });
+            // Restore the style used to generate this history item
+            if (item.result?.style) {
+                setInfographicStyle(item.result.style);
+                setLastGeneratedStyle(item.result.style);
+            }
         } catch { toast.error('Could not load history item'); }
     }, []);
 
@@ -331,6 +336,7 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
             const response = await generateContent({ ...formData, style: infographicStyle });
             if (response?.status === 'success') {
                 setResult(response.data);
+                setLastGeneratedStyle(infographicStyle);
                 // Update credits from response
                 if (response.data?.credits_remaining !== undefined) {
                     setCredits(response.data.credits_remaining);
@@ -352,7 +358,7 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
 
     const handleNewPost = () => {
         setFormData({ title: '', tone: 'Professional', audience: '' });
-        setResult(null); setCurrentHistoryId(null);
+        setResult(null); setCurrentHistoryId(null); setLastGeneratedStyle(null);
     };
 
     const c = result?.content;
@@ -546,10 +552,15 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                 </div>
                             </div>
 
+                            {result && lastGeneratedStyle && infographicStyle !== lastGeneratedStyle && (
+                                <div style={{ fontSize: 12, color: '#b45309', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 10, padding: '8px 14px', textAlign: 'center', fontWeight: 600 }}>
+                                    Style changed to <strong>{STYLES.find(s => s.id === infographicStyle)?.label}</strong> — click Generate to apply
+                                </div>
+                            )}
                             <button onClick={handleSubmit} disabled={loading}
-                                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '16px 24px', borderRadius: 18, background: loading ? '#e5a3a3' : 'linear-gradient(135deg,#c54444,#a82c2c)', color: 'white', fontWeight: 800, fontSize: 15, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 10px 25px rgba(197,68,68,0.3)', transition: 'all 0.3s' }}
+                                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '16px 24px', borderRadius: 18, background: loading ? '#e5a3a3' : result && lastGeneratedStyle && infographicStyle !== lastGeneratedStyle ? 'linear-gradient(135deg,#d97706,#b45309)' : 'linear-gradient(135deg,#c54444,#a82c2c)', color: 'white', fontWeight: 800, fontSize: 15, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 10px 25px rgba(197,68,68,0.3)', transition: 'all 0.3s' }}
                             >
-                                {loading ? <Loader2 className="animate-spin" size={20} /> : <><Wand2 size={20} /> Generate Masterpiece</>}
+                                {loading ? <Loader2 className="animate-spin" size={20} /> : result && lastGeneratedStyle && infographicStyle !== lastGeneratedStyle ? <><RefreshCw size={20} /> Regenerate with New Style</> : <><Wand2 size={20} /> Generate Masterpiece</>}
                             </button>
 
                             {/* Credits indicator */}
@@ -581,9 +592,14 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                         {c?.infographic_image_url && (
                                             <div style={{ marginBottom: 48, textAlign: 'center' }}>
                                                 <div style={{ position: 'relative', display: 'inline-block', maxWidth: '90%' }}>
-                                                    <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
+                                                    <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                                                         <Image size={22} color="#c54444" />
                                                         <h2 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase', letterSpacing: 1.5 }}>AI-Generated Visual</h2>
+                                                        {(c?.style || lastGeneratedStyle) && (
+                                                            <span style={{ fontSize: 11, fontWeight: 700, color: '#7c3aed', background: '#f3e8ff', border: '1px solid #ddd6fe', borderRadius: 20, padding: '3px 10px', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                                                                {STYLES.find(s => s.id === (c?.style || lastGeneratedStyle))?.label || (c?.style || lastGeneratedStyle)}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <img src={c.infographic_image_url} alt="AI Infographic"
                                                         style={{ width: '100%', borderRadius: 24, boxShadow: '0 20px 50px rgba(0,0,0,0.18)', border: '1px solid #f8e6e6' }}

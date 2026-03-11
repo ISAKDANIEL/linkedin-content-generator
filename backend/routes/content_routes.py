@@ -56,6 +56,9 @@ def generate_content(current_user):
         if not content_data:
             return jsonify({"error": "Failed to generate content from AI provider"}), 500
 
+        # Store the style used so history items can restore it
+        content_data['style'] = style
+
         deduct_credit(user_id)
         save_history(user_id, title, tone, audience, content_data)
         save_result = save_generated_content(title, content_data, "")
