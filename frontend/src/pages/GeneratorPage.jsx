@@ -208,64 +208,101 @@ function ExecutiveRenderer({ infographic, title }) {
     );
 }
 
-/* ── HANDWRITTEN NOTES ─────────────────────────────────────────────────────── */
+/* ── HANDWRITTEN NOTES (Sketchnote style) ──────────────────────────────────── */
 function HandwrittenRenderer({ infographic, title }) {
     const categories = infographic?.categories || [];
     const infTitle = infographic?.title || title;
     const infSubtitle = infographic?.subtitle || '';
-    const INK = ['#7b341e','#553c9a','#1a4731','#1a365d','#742a2a','#234e52','#744210','#3c1a5b'];
-    const PAPER_BG = ['#fffde7','#fff9f0','#f0fff4','#ebf8ff','#fff5f5','#f0ffff','#fffaf0','#faf5ff'];
-    // Lined paper pattern
-    const lined = 'repeating-linear-gradient(transparent, transparent 24px, #b8a99a55 25px)';
+    // Pastel accent boxes — light, like highlighter markers
+    const ACCENTS = [
+        { bg: '#d4f1f9', border: '#5bc8e2' }, // light blue
+        { bg: '#fde8d8', border: '#f4a261' }, // light orange
+        { bg: '#d9f2e0', border: '#52b788' }, // light green
+        { bg: '#ede0f7', border: '#9b72cf' }, // light purple
+        { bg: '#fff0cc', border: '#f4c430' }, // light yellow
+        { bg: '#ffd6e0', border: '#e07a99' }, // light pink
+        { bg: '#d0f0f0', border: '#3aafa9' }, // teal
+        { bg: '#e8e8ff', border: '#7777dd' }, // lavender
+        { bg: '#ffe5cc', border: '#e08030' }, // peach
+        { bg: '#e0f4e0', border: '#44aa44' }, // green
+    ];
+    const DECO = ['⚙️','💡','🔧','📊','🎯','🚀','🔍','💎','⭐','🏆'];
+
     return (
-        <div style={{ fontFamily: "'Comic Sans MS','Chalkboard SE',cursive", background: '#fdf6e3', borderRadius: 14, overflow: 'hidden', border: '2px solid #c8a97e', boxShadow: '4px 4px 0 #c8a97e, 7px 7px 0 #e8d5b7' }}>
-            {/* Spiral binding strip */}
-            <div style={{ background: '#3d2b1f', height: 18, display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px', overflow: 'hidden' }}>
-                {Array.from({length: 18}).map((_, i) => (
-                    <div key={i} style={{ flexShrink: 0, width: 14, height: 14, borderRadius: '50%', border: '2px solid #8b6914', background: '#5c3d11', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }} />
-                ))}
+        <div style={{
+            fontFamily: "'Arial Black', 'Arial Bold', Impact, sans-serif",
+            background: '#f5f0eb',
+            borderRadius: 18,
+            border: '3px solid #1a1a1a',
+            boxShadow: '5px 5px 0 #1a1a1a',
+            overflow: 'hidden',
+        }}>
+            {/* ── BIG TITLE ── */}
+            <div style={{ padding: '18px 22px 12px', textAlign: 'center', background: '#f5f0eb', borderBottom: '3px solid #1a1a1a' }}>
+                <h1 style={{
+                    fontSize: 26, fontWeight: 900, color: '#1a1a1a', margin: '0 0 4px',
+                    textTransform: 'uppercase', letterSpacing: 1.5, lineHeight: 1.15,
+                    fontFamily: "'Arial Black', Impact, sans-serif",
+                }}>
+                    {infTitle}
+                </h1>
+                {/* thick underline like drawn with a marker */}
+                <div style={{ width: '75%', height: 3, background: '#1a1a1a', margin: '4px auto 10px', borderRadius: 2 }} />
+                {infSubtitle && (
+                    <div style={{ display: 'inline-block', background: '#d4f1f9', border: '2px solid #1a1a1a', borderRadius: 8, padding: '4px 18px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: 'Arial, sans-serif' }}>{infSubtitle}</span>
+                    </div>
+                )}
             </div>
-            {/* Cover header */}
-            <div style={{ background: 'linear-gradient(135deg,#3d2b1f 0%,#5c4033 100%)', padding: '14px 20px 12px', borderBottom: '4px solid #D69E2E', textAlign: 'center' }}>
-                <div style={{ display: 'inline-block', background: '#D69E2E', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 12px', borderRadius: 3, marginBottom: 6, letterSpacing: 1.5, textTransform: 'uppercase' }}>✏️ Handwritten Notes</div>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fef3c7', margin: '0 0 4px', lineHeight: 1.3, fontStyle: 'italic' }}>{infTitle}</h2>
-                {infSubtitle && <p style={{ fontSize: 12, color: '#d4a96a', margin: 0, fontStyle: 'italic' }}>{infSubtitle}</p>}
-            </div>
-            {/* Lined paper grid */}
-            <div style={{ padding: '10px', background: '#fdf6e3', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                {categories.map((cat, ci) => {
-                    const ink = INK[ci % INK.length];
-                    const paperBg = PAPER_BG[ci % PAPER_BG.length];
-                    const nodes = (cat.nodes || []).slice(0, 5);
-                    return (
-                        <motion.div key={ci} initial={{ opacity: 0, rotate: ci % 2 === 0 ? -0.8 : 0.8 }} animate={{ opacity: 1, rotate: 0 }} transition={{ delay: ci * 0.05, type: 'spring', stiffness: 200 }}
-                            style={{ background: lined, backgroundColor: paperBg, borderRadius: 6, border: `1px solid ${ink}30`, borderLeft: `4px solid ${ink}`, padding: '8px 10px 10px', boxShadow: '2px 3px 8px rgba(0,0,0,0.1)', position: 'relative', overflow: 'hidden' }}>
-                            {/* Red margin line */}
-                            <div style={{ position: 'absolute', left: 32, top: 0, bottom: 0, width: 1, background: '#e57373aa', pointerEvents: 'none' }} />
-                            {/* Section tab */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7, paddingBottom: 5, borderBottom: `2px solid ${ink}40` }}>
-                                <span style={{ fontSize: 16 }}>{cat.icon || ['📝','📌','✍️','📖','🖊️','📒','🗒️','📓'][ci % 8]}</span>
-                                <span style={{ fontSize: 12, fontWeight: 700, color: ink, textDecoration: 'underline wavy', textUnderlineOffset: 3, lineHeight: 1.3 }}>{cat.label}</span>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingLeft: 2 }}>
-                                {nodes.map((node, ni) => (
-                                    <div key={ni} style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
-                                        <span style={{ color: ink, fontSize: 14, flexShrink: 0, lineHeight: '16px' }}>✓</span>
-                                        <div style={{ fontSize: 11, lineHeight: 1.45 }}>
-                                            <span style={{ color: '#3d2008', fontWeight: 600 }}>{node.label}</span>
-                                            {node.sublabel && <span style={{ color: '#7b5e3a', fontStyle: 'italic' }}>{' — '}{node.sublabel}</span>}
+
+            {/* ── MAIN CONTENT BOX ── */}
+            <div style={{ margin: '12px', border: '2px solid #1a1a1a', borderRadius: 12, background: '#fff', overflow: 'hidden' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                    {categories.map((cat, ci) => {
+                        const acc = ACCENTS[ci % ACCENTS.length];
+                        const nodes = (cat.nodes || []).slice(0, 5);
+                        const isRightCol = ci % 2 === 1;
+                        const isLastRow = ci >= categories.length - 2;
+                        const deco = cat.icon || DECO[ci % DECO.length];
+                        return (
+                            <motion.div key={ci}
+                                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.04 }}
+                                style={{
+                                    padding: '12px 14px',
+                                    borderRight: !isRightCol ? '2px dashed #bbb' : 'none',
+                                    borderBottom: !isLastRow ? '2px dashed #bbb' : 'none',
+                                    background: '#fff',
+                                }}>
+                                {/* Section title in accent box */}
+                                <div style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                    background: acc.bg, border: `2px solid #1a1a1a`,
+                                    borderRadius: 6, padding: '3px 10px', marginBottom: 8,
+                                }}>
+                                    <span style={{ fontSize: 14 }}>{deco}</span>
+                                    <span style={{ fontSize: 11, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: "'Arial Black', sans-serif" }}>{cat.label}</span>
+                                </div>
+                                {/* Bullet points */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    {nodes.map((node, ni) => (
+                                        <div key={ni} style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+                                            <span style={{ fontSize: 15, lineHeight: '16px', fontWeight: 900, flexShrink: 0, color: '#1a1a1a' }}>·</span>
+                                            <div style={{ fontSize: 12, fontFamily: 'Arial, sans-serif', lineHeight: 1.45, color: '#1a1a1a' }}>
+                                                <span style={{ fontWeight: 700 }}>{node.label}</span>
+                                                {node.sublabel && <span style={{ color: '#555', fontWeight: 400 }}>{' '}{node.sublabel}</span>}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                            {/* Corner fold */}
-                            <div style={{ position: 'absolute', bottom: 0, right: 0, width: 0, height: 0, borderStyle: 'solid', borderWidth: '0 0 12px 12px', borderColor: `transparent transparent ${ink}30 transparent` }} />
-                        </motion.div>
-                    );
-                })}
+                                    ))}
+                                </div>
+                            </motion.div>
+                        );
+                    })}
+                </div>
             </div>
-            <div style={{ background: '#3d2b1f', padding: '7px', textAlign: 'center', borderTop: '3px solid #D69E2E' }}>
-                <span style={{ fontSize: 10, color: '#d4a96a', letterSpacing: 1, fontStyle: 'italic' }}>makepost.pro • Handwritten Notes</span>
+
+            {/* ── FOOTER ── */}
+            <div style={{ padding: '7px 12px', textAlign: 'center', borderTop: '2px solid #1a1a1a', background: '#f5f0eb' }}>
+                <span style={{ fontSize: 10, color: '#555', letterSpacing: 1.2, fontFamily: 'Arial, sans-serif' }}>makepost.pro • Handwritten Notes</span>
             </div>
         </div>
     );
