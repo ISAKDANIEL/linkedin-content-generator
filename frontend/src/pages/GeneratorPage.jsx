@@ -270,110 +270,169 @@ function ExecutiveRenderer({ infographic, title }) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   HANDWRITTEN NOTES — Whiteboard Sketchnote
-   Layout: Pure white whiteboard. Giant bold title + underline. Sections in
-   bordered boxes with FLOATING COLORED LABEL at top (exactly like reference).
-   Two-column layout. Emoji icons. Dashed divider between columns.
+   HANDWRITTEN NOTES — Hub-and-spoke whiteboard diagram (matches reference image)
+   TOP: central hub circle + surrounding category boxes + SVG dashed arrows
+   BOTTOM: two panels with floating colored labels (like reference)
 ══════════════════════════════════════════════════════════════════════════════ */
 function HandwrittenRenderer({ infographic, title }) {
     const categories = infographic?.categories || [];
     const infTitle = infographic?.title || title;
     const infSubtitle = infographic?.subtitle || '';
 
-    // Floating label colors — matches reference image (green, blue, purple, yellow, red, teal…)
-    const LABEL_STYLES = [
-        { labelBg: '#bbf7d0', labelBorder: '#16a34a', boxBorder: '#16a34a' },   // green
-        { labelBg: '#bfdbfe', labelBorder: '#2563eb', boxBorder: '#2563eb' },   // blue
-        { labelBg: '#ddd6fe', labelBorder: '#7c3aed', boxBorder: '#7c3aed' },   // purple
-        { labelBg: '#fef08a', labelBorder: '#ca8a04', boxBorder: '#ca8a04' },   // yellow
-        { labelBg: '#fecaca', labelBorder: '#dc2626', boxBorder: '#dc2626' },   // red
-        { labelBg: '#a5f3fc', labelBorder: '#0891b2', boxBorder: '#0891b2' },   // teal
-        { labelBg: '#fed7aa', labelBorder: '#ea580c', boxBorder: '#ea580c' },   // orange
-        { labelBg: '#fbcfe8', labelBorder: '#db2777', boxBorder: '#db2777' },   // pink
-        { labelBg: '#d1fae5', labelBorder: '#059669', boxBorder: '#059669' },   // emerald
-        { labelBg: '#e0e7ff', labelBorder: '#4f46e5', boxBorder: '#4f46e5' },   // indigo
+    const LC = [
+        { bg: '#bbf7d0', bd: '#16a34a' },
+        { bg: '#bfdbfe', bd: '#2563eb' },
+        { bg: '#ddd6fe', bd: '#7c3aed' },
+        { bg: '#fef08a', bd: '#ca8a04' },
+        { bg: '#fecaca', bd: '#dc2626' },
+        { bg: '#a5f3fc', bd: '#0891b2' },
+        { bg: '#fed7aa', bd: '#ea580c' },
+        { bg: '#fbcfe8', bd: '#db2777' },
     ];
     const ICONS = ['🤖','💡','⚙️','🧠','👁️','🌐','📊','🎯','🔧','⚡','🚀','💎'];
 
-    // Split into left and right columns
-    const left  = categories.filter((_, i) => i % 2 === 0);
-    const right = categories.filter((_, i) => i % 2 === 1);
+    // First 6 → hub spokes. Rest → bottom two panels.
+    const hubCount = Math.min(categories.length, 6);
+    const hubCats = categories.slice(0, hubCount);
+    const botCats = categories.slice(hubCount);
+    const botLeft  = botCats.filter((_, i) => i % 2 === 0);
+    const botRight = botCats.filter((_, i) => i % 2 === 1);
 
-    const SectionBox = ({ cat, ci }) => {
-        const ls = LABEL_STYLES[ci % LABEL_STYLES.length];
-        const nodes = (cat.nodes || []).slice(0, 5);
+    // Spoke positions (cx, cy as 0–100 percentages of the hub box)
+    // 6 positions evenly around center, offset to look like reference
+    const SPOKE_POS = [
+        { cx: 50, cy:  8 },  // top
+        { cx: 88, cy: 28 },  // top-right
+        { cx: 88, cy: 72 },  // bottom-right
+        { cx: 50, cy: 90 },  // bottom
+        { cx: 12, cy: 72 },  // bottom-left
+        { cx: 12, cy: 28 },  // top-left
+    ];
+
+    // Floating-label section box (used in bottom panels)
+    const FloatBox = ({ cat, ci, style: extraStyle }) => {
+        const lc = LC[ci % LC.length];
+        const nodes = (cat.nodes || []).slice(0, 4);
         const icon = cat.icon || ICONS[ci % ICONS.length];
         return (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.06 }}
-                style={{ position: 'relative', border: `2px solid ${ls.boxBorder}`, borderRadius: 8, padding: '20px 12px 12px', marginBottom: 10 }}>
-                {/* Floating label — sits ON the top border like reference image */}
-                <div style={{
-                    position: 'absolute', top: -13, left: 10,
-                    background: ls.labelBg, border: `2px solid ${ls.labelBorder}`,
-                    borderRadius: 5, padding: '2px 10px',
-                    display: 'flex', alignItems: 'center', gap: 5,
-                }}>
-                    <span style={{ fontSize: 13 }}>{icon}</span>
-                    <span style={{ fontSize: 11, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: "'Arial Black', sans-serif", whiteSpace: 'nowrap' }}>{cat.label}</span>
+            <div style={{ position: 'relative', border: `2px solid ${lc.bd}`, borderRadius: 7, padding: '18px 10px 10px', marginBottom: 10, ...extraStyle }}>
+                <div style={{ position: 'absolute', top: -12, left: 8, background: lc.bg, border: `2px solid ${lc.bd}`, borderRadius: 5, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 12 }}>{icon}</span>
+                    <span style={{ fontSize: 10, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.4, fontFamily: "'Arial Black',sans-serif", whiteSpace: 'nowrap' }}>{cat.label}</span>
                 </div>
-                {/* Bullet items */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    {nodes.map((node, ni) => (
-                        <div key={ni} style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                            <span style={{ fontSize: 14, color: ls.labelBorder, fontWeight: 900, lineHeight: '16px', flexShrink: 0 }}>•</span>
-                            <div style={{ fontSize: 11.5, fontFamily: 'Arial, sans-serif', lineHeight: 1.45, color: '#1a1a1a' }}>
-                                <span style={{ fontWeight: 700 }}>{node.label}</span>
-                                {node.sublabel && <span style={{ color: '#444', fontWeight: 400 }}>{' — '}{node.sublabel}</span>}
-                            </div>
+                {nodes.map((n, ni) => (
+                    <div key={ni} style={{ display: 'flex', gap: 5, alignItems: 'flex-start', marginBottom: 4 }}>
+                        <span style={{ color: lc.bd, fontWeight: 900, fontSize: 13, lineHeight: '15px', flexShrink: 0 }}>•</span>
+                        <div style={{ fontSize: 11, fontFamily: 'Arial,sans-serif', lineHeight: 1.4, color: '#1a1a1a' }}>
+                            <b>{n.label}</b>{n.sublabel && <span style={{ color: '#555', fontWeight: 400 }}>{' — '}{n.sublabel}</span>}
                         </div>
-                    ))}
-                </div>
-            </motion.div>
+                    </div>
+                ))}
+            </div>
         );
     };
 
     return (
-        <div style={{
-            fontFamily: "'Arial Black', Impact, sans-serif",
-            background: '#ffffff',
-            borderRadius: 14,
-            border: '4px solid #1a1a1a',
-            boxShadow: '6px 6px 0 #aaa',
-            overflow: 'hidden',
-        }}>
-            {/* ── GIANT TITLE ── */}
-            <div style={{ padding: '18px 20px 14px', textAlign: 'center', background: '#fff', borderBottom: '3px solid #1a1a1a' }}>
-                <h1 style={{
-                    fontSize: 24, fontWeight: 900, color: '#1a1a1a',
-                    textTransform: 'uppercase', letterSpacing: 2, lineHeight: 1.1,
-                    margin: '0 0 5px', fontFamily: "'Arial Black', Impact, sans-serif",
-                }}>
-                    {infTitle}
-                </h1>
-                {/* Thick marker underline */}
+        <div style={{ fontFamily: "'Arial Black',Impact,sans-serif", background: '#fff', borderRadius: 14, border: '4px solid #1a1a1a', boxShadow: '6px 6px 0 #bbb', overflow: 'hidden' }}>
+
+            {/* ── TITLE ── */}
+            <div style={{ padding: '16px 20px 12px', textAlign: 'center', borderBottom: '3px solid #1a1a1a' }}>
+                <h1 style={{ fontSize: 22, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 2, lineHeight: 1.1, margin: '0 0 5px' }}>{infTitle}</h1>
                 <div style={{ width: '82%', height: 3, background: '#1a1a1a', margin: '0 auto 10px', borderRadius: 2 }} />
                 {infSubtitle && (
-                    <div style={{ display: 'inline-block', background: '#bfdbfe', border: '2px solid #1a1a1a', borderRadius: 7, padding: '4px 20px' }}>
-                        <span style={{ fontSize: 11, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: 'Arial, sans-serif' }}>{infSubtitle}</span>
+                    <div style={{ display: 'inline-block', background: '#bfdbfe', border: '2px solid #1a1a1a', borderRadius: 7, padding: '3px 18px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: 'Arial,sans-serif' }}>{infSubtitle}</span>
                     </div>
                 )}
             </div>
 
-            {/* ── TWO-COLUMN CONTENT ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, background: '#fff' }}>
-                {/* Left column */}
-                <div style={{ padding: '14px 12px 8px 14px', borderRight: '2px dashed #bbb' }}>
-                    {left.map((cat, i) => <SectionBox key={i} cat={cat} ci={i * 2} />)}
+            {/* ── HUB DIAGRAM ── */}
+            <div style={{ margin: '10px', border: '2px solid #444', borderRadius: 8, position: 'relative', height: 310, background: '#fff', overflow: 'hidden' }}>
+
+                {/* SVG dashed arrows from center to each spoke */}
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none"
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+                    <defs>
+                        <marker id="arr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto">
+                            <polygon points="0,0 5,2.5 0,5" fill="#555" />
+                        </marker>
+                    </defs>
+                    {hubCats.map((_, i) => {
+                        const p = SPOKE_POS[i % SPOKE_POS.length];
+                        // Shorten line so it doesn't overlap the boxes
+                        const dx = p.cx - 50, dy = p.cy - 50;
+                        const len = Math.sqrt(dx*dx + dy*dy);
+                        const r = 8; // radius to stop short of spoke box
+                        const ex = p.cx - (dx / len) * r;
+                        const ey = p.cy - (dy / len) * r;
+                        return (
+                            <line key={i} x1="50" y1="50" x2={ex} y2={ey}
+                                stroke="#555" strokeWidth="0.7" strokeDasharray="2,1.5"
+                                markerEnd="url(#arr)" />
+                        );
+                    })}
+                </svg>
+
+                {/* Center circle */}
+                <div style={{
+                    position: 'absolute', left: '50%', top: '50%',
+                    transform: 'translate(-50%,-50%)', zIndex: 10,
+                    width: 76, height: 76, borderRadius: '50%',
+                    border: '3px solid #16a34a', background: '#fff',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.13)'
+                }}>
+                    <div style={{ fontSize: 24 }}>🤖</div>
+                    <div style={{ fontSize: 8, fontWeight: 900, color: '#14532d', lineHeight: 1.2, textTransform: 'uppercase', maxWidth: 60 }}>
+                        {(infTitle || '').split(' ').slice(0,3).join(' ')}
+                    </div>
                 </div>
-                {/* Right column */}
-                <div style={{ padding: '14px 14px 8px 12px' }}>
-                    {right.map((cat, i) => <SectionBox key={i} cat={cat} ci={i * 2 + 1} />)}
-                </div>
+
+                {/* Spoke boxes */}
+                {hubCats.map((cat, i) => {
+                    const pos = SPOKE_POS[i % SPOKE_POS.length];
+                    const lc = LC[i % LC.length];
+                    const icon = cat.icon || ICONS[i % ICONS.length];
+                    const mainItem = cat.nodes?.[0]?.label || '';
+                    const subItem  = cat.nodes?.[1]?.label || '';
+                    return (
+                        <motion.div key={i} initial={{ opacity: 0, scale: 0.75 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.07, type: 'spring', stiffness: 200 }}
+                            style={{
+                                position: 'absolute',
+                                left: `${pos.cx}%`, top: `${pos.cy}%`,
+                                transform: 'translate(-50%,-50%)',
+                                zIndex: 5, maxWidth: 88, minWidth: 60,
+                                background: lc.bg, border: `2px solid ${lc.bd}`,
+                                borderRadius: 6, padding: '4px 7px 5px',
+                                textAlign: 'center',
+                                boxShadow: '1px 2px 5px rgba(0,0,0,0.12)'
+                            }}>
+                            <div style={{ fontSize: 16, lineHeight: 1 }}>{icon}</div>
+                            <div style={{ fontSize: 9, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.3, fontFamily: "'Arial Black',sans-serif", lineHeight: 1.25 }}>{cat.label}</div>
+                            {mainItem && <div style={{ fontSize: 8, color: '#333', fontFamily: 'Arial,sans-serif', lineHeight: 1.3, marginTop: 2 }}>{mainItem}</div>}
+                            {subItem  && <div style={{ fontSize: 8, color: '#555', fontFamily: 'Arial,sans-serif', lineHeight: 1.3 }}>{subItem}</div>}
+                        </motion.div>
+                    );
+                })}
             </div>
+
+            {/* ── BOTTOM PANELS ── */}
+            {botCats.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', margin: '0 10px 10px', border: '2px solid #444', borderRadius: 8, overflow: 'visible', background: '#fff', gap: 0 }}>
+                    {/* Left panel */}
+                    <div style={{ padding: '14px 10px 10px', borderRight: '2px solid #444', paddingTop: 16 }}>
+                        {botLeft.map((cat, i) => <FloatBox key={i} cat={cat} ci={i * 2} />)}
+                    </div>
+                    {/* Right panel */}
+                    <div style={{ padding: '14px 10px 10px', paddingTop: 16 }}>
+                        {botRight.map((cat, i) => <FloatBox key={i} cat={cat} ci={i * 2 + 1} />)}
+                    </div>
+                </div>
+            )}
 
             {/* ── FOOTER ── */}
             <div style={{ padding: '7px 14px', borderTop: '3px solid #1a1a1a', background: '#fff', textAlign: 'center' }}>
-                <span style={{ fontSize: 10, color: '#555', letterSpacing: 1.2, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>makepost.pro • Handwritten Notes</span>
+                <span style={{ fontSize: 10, color: '#555', letterSpacing: 1, fontFamily: 'Arial,sans-serif', fontWeight: 600 }}>makepost.pro • Handwritten Notes</span>
             </div>
         </div>
     );
