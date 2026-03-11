@@ -33,6 +33,7 @@ jobs:
       - name: Deploy backend files
         run: |
           rsync -az --delete \
+            --exclude='venv' \
             --exclude='.venv' \
             --exclude='__pycache__' \
             --exclude='*.pyc' \
