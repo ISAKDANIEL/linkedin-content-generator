@@ -269,101 +269,111 @@ function ExecutiveRenderer({ infographic, title }) {
     );
 }
 
-/* ── HANDWRITTEN NOTES (Sketchnote style) ──────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   HANDWRITTEN NOTES — Whiteboard Sketchnote
+   Layout: Pure white whiteboard. Giant bold title + underline. Sections in
+   bordered boxes with FLOATING COLORED LABEL at top (exactly like reference).
+   Two-column layout. Emoji icons. Dashed divider between columns.
+══════════════════════════════════════════════════════════════════════════════ */
 function HandwrittenRenderer({ infographic, title }) {
     const categories = infographic?.categories || [];
     const infTitle = infographic?.title || title;
     const infSubtitle = infographic?.subtitle || '';
-    // Pastel accent boxes — light, like highlighter markers
-    const ACCENTS = [
-        { bg: '#d4f1f9', border: '#5bc8e2' }, // light blue
-        { bg: '#fde8d8', border: '#f4a261' }, // light orange
-        { bg: '#d9f2e0', border: '#52b788' }, // light green
-        { bg: '#ede0f7', border: '#9b72cf' }, // light purple
-        { bg: '#fff0cc', border: '#f4c430' }, // light yellow
-        { bg: '#ffd6e0', border: '#e07a99' }, // light pink
-        { bg: '#d0f0f0', border: '#3aafa9' }, // teal
-        { bg: '#e8e8ff', border: '#7777dd' }, // lavender
-        { bg: '#ffe5cc', border: '#e08030' }, // peach
-        { bg: '#e0f4e0', border: '#44aa44' }, // green
+
+    // Floating label colors — matches reference image (green, blue, purple, yellow, red, teal…)
+    const LABEL_STYLES = [
+        { labelBg: '#bbf7d0', labelBorder: '#16a34a', boxBorder: '#16a34a' },   // green
+        { labelBg: '#bfdbfe', labelBorder: '#2563eb', boxBorder: '#2563eb' },   // blue
+        { labelBg: '#ddd6fe', labelBorder: '#7c3aed', boxBorder: '#7c3aed' },   // purple
+        { labelBg: '#fef08a', labelBorder: '#ca8a04', boxBorder: '#ca8a04' },   // yellow
+        { labelBg: '#fecaca', labelBorder: '#dc2626', boxBorder: '#dc2626' },   // red
+        { labelBg: '#a5f3fc', labelBorder: '#0891b2', boxBorder: '#0891b2' },   // teal
+        { labelBg: '#fed7aa', labelBorder: '#ea580c', boxBorder: '#ea580c' },   // orange
+        { labelBg: '#fbcfe8', labelBorder: '#db2777', boxBorder: '#db2777' },   // pink
+        { labelBg: '#d1fae5', labelBorder: '#059669', boxBorder: '#059669' },   // emerald
+        { labelBg: '#e0e7ff', labelBorder: '#4f46e5', boxBorder: '#4f46e5' },   // indigo
     ];
-    const DECO = ['⚙️','💡','🔧','📊','🎯','🚀','🔍','💎','⭐','🏆'];
+    const ICONS = ['🤖','💡','⚙️','🧠','👁️','🌐','📊','🎯','🔧','⚡','🚀','💎'];
+
+    // Split into left and right columns
+    const left  = categories.filter((_, i) => i % 2 === 0);
+    const right = categories.filter((_, i) => i % 2 === 1);
+
+    const SectionBox = ({ cat, ci }) => {
+        const ls = LABEL_STYLES[ci % LABEL_STYLES.length];
+        const nodes = (cat.nodes || []).slice(0, 5);
+        const icon = cat.icon || ICONS[ci % ICONS.length];
+        return (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.06 }}
+                style={{ position: 'relative', border: `2px solid ${ls.boxBorder}`, borderRadius: 8, padding: '20px 12px 12px', marginBottom: 10 }}>
+                {/* Floating label — sits ON the top border like reference image */}
+                <div style={{
+                    position: 'absolute', top: -13, left: 10,
+                    background: ls.labelBg, border: `2px solid ${ls.labelBorder}`,
+                    borderRadius: 5, padding: '2px 10px',
+                    display: 'flex', alignItems: 'center', gap: 5,
+                }}>
+                    <span style={{ fontSize: 13 }}>{icon}</span>
+                    <span style={{ fontSize: 11, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: "'Arial Black', sans-serif", whiteSpace: 'nowrap' }}>{cat.label}</span>
+                </div>
+                {/* Bullet items */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {nodes.map((node, ni) => (
+                        <div key={ni} style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                            <span style={{ fontSize: 14, color: ls.labelBorder, fontWeight: 900, lineHeight: '16px', flexShrink: 0 }}>•</span>
+                            <div style={{ fontSize: 11.5, fontFamily: 'Arial, sans-serif', lineHeight: 1.45, color: '#1a1a1a' }}>
+                                <span style={{ fontWeight: 700 }}>{node.label}</span>
+                                {node.sublabel && <span style={{ color: '#444', fontWeight: 400 }}>{' — '}{node.sublabel}</span>}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </motion.div>
+        );
+    };
 
     return (
         <div style={{
-            fontFamily: "'Arial Black', 'Arial Bold', Impact, sans-serif",
-            background: '#f5f0eb',
-            borderRadius: 18,
-            border: '3px solid #1a1a1a',
-            boxShadow: '5px 5px 0 #1a1a1a',
+            fontFamily: "'Arial Black', Impact, sans-serif",
+            background: '#ffffff',
+            borderRadius: 14,
+            border: '4px solid #1a1a1a',
+            boxShadow: '6px 6px 0 #aaa',
             overflow: 'hidden',
         }}>
-            {/* ── BIG TITLE ── */}
-            <div style={{ padding: '18px 22px 12px', textAlign: 'center', background: '#f5f0eb', borderBottom: '3px solid #1a1a1a' }}>
+            {/* ── GIANT TITLE ── */}
+            <div style={{ padding: '18px 20px 14px', textAlign: 'center', background: '#fff', borderBottom: '3px solid #1a1a1a' }}>
                 <h1 style={{
-                    fontSize: 26, fontWeight: 900, color: '#1a1a1a', margin: '0 0 4px',
-                    textTransform: 'uppercase', letterSpacing: 1.5, lineHeight: 1.15,
-                    fontFamily: "'Arial Black', Impact, sans-serif",
+                    fontSize: 24, fontWeight: 900, color: '#1a1a1a',
+                    textTransform: 'uppercase', letterSpacing: 2, lineHeight: 1.1,
+                    margin: '0 0 5px', fontFamily: "'Arial Black', Impact, sans-serif",
                 }}>
                     {infTitle}
                 </h1>
-                {/* thick underline like drawn with a marker */}
-                <div style={{ width: '75%', height: 3, background: '#1a1a1a', margin: '4px auto 10px', borderRadius: 2 }} />
+                {/* Thick marker underline */}
+                <div style={{ width: '82%', height: 3, background: '#1a1a1a', margin: '0 auto 10px', borderRadius: 2 }} />
                 {infSubtitle && (
-                    <div style={{ display: 'inline-block', background: '#d4f1f9', border: '2px solid #1a1a1a', borderRadius: 8, padding: '4px 18px' }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: 'Arial, sans-serif' }}>{infSubtitle}</span>
+                    <div style={{ display: 'inline-block', background: '#bfdbfe', border: '2px solid #1a1a1a', borderRadius: 7, padding: '4px 20px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: 'Arial, sans-serif' }}>{infSubtitle}</span>
                     </div>
                 )}
             </div>
 
-            {/* ── MAIN CONTENT BOX ── */}
-            <div style={{ margin: '12px', border: '2px solid #1a1a1a', borderRadius: 12, background: '#fff', overflow: 'hidden' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-                    {categories.map((cat, ci) => {
-                        const acc = ACCENTS[ci % ACCENTS.length];
-                        const nodes = (cat.nodes || []).slice(0, 5);
-                        const isRightCol = ci % 2 === 1;
-                        const isLastRow = ci >= categories.length - 2;
-                        const deco = cat.icon || DECO[ci % DECO.length];
-                        return (
-                            <motion.div key={ci}
-                                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.04 }}
-                                style={{
-                                    padding: '12px 14px',
-                                    borderRight: !isRightCol ? '2px dashed #bbb' : 'none',
-                                    borderBottom: !isLastRow ? '2px dashed #bbb' : 'none',
-                                    background: '#fff',
-                                }}>
-                                {/* Section title in accent box */}
-                                <div style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                                    background: acc.bg, border: `2px solid #1a1a1a`,
-                                    borderRadius: 6, padding: '3px 10px', marginBottom: 8,
-                                }}>
-                                    <span style={{ fontSize: 14 }}>{deco}</span>
-                                    <span style={{ fontSize: 11, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: "'Arial Black', sans-serif" }}>{cat.label}</span>
-                                </div>
-                                {/* Bullet points */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                    {nodes.map((node, ni) => (
-                                        <div key={ni} style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
-                                            <span style={{ fontSize: 15, lineHeight: '16px', fontWeight: 900, flexShrink: 0, color: '#1a1a1a' }}>·</span>
-                                            <div style={{ fontSize: 12, fontFamily: 'Arial, sans-serif', lineHeight: 1.45, color: '#1a1a1a' }}>
-                                                <span style={{ fontWeight: 700 }}>{node.label}</span>
-                                                {node.sublabel && <span style={{ color: '#555', fontWeight: 400 }}>{' '}{node.sublabel}</span>}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </motion.div>
-                        );
-                    })}
+            {/* ── TWO-COLUMN CONTENT ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, background: '#fff' }}>
+                {/* Left column */}
+                <div style={{ padding: '14px 12px 8px 14px', borderRight: '2px dashed #bbb' }}>
+                    {left.map((cat, i) => <SectionBox key={i} cat={cat} ci={i * 2} />)}
+                </div>
+                {/* Right column */}
+                <div style={{ padding: '14px 14px 8px 12px' }}>
+                    {right.map((cat, i) => <SectionBox key={i} cat={cat} ci={i * 2 + 1} />)}
                 </div>
             </div>
 
             {/* ── FOOTER ── */}
-            <div style={{ padding: '7px 12px', textAlign: 'center', borderTop: '2px solid #1a1a1a', background: '#f5f0eb' }}>
-                <span style={{ fontSize: 10, color: '#555', letterSpacing: 1.2, fontFamily: 'Arial, sans-serif' }}>makepost.pro • Handwritten Notes</span>
+            <div style={{ padding: '7px 14px', borderTop: '3px solid #1a1a1a', background: '#fff', textAlign: 'center' }}>
+                <span style={{ fontSize: 10, color: '#555', letterSpacing: 1.2, fontFamily: 'Arial, sans-serif', fontWeight: 600 }}>makepost.pro • Handwritten Notes</span>
             </div>
         </div>
     );
