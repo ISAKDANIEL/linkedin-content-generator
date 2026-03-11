@@ -58,91 +58,136 @@ async function downloadAIImage(imageUrl, title) {
 
 // ── Visual Infographic Renderer (style-aware) ──────────────────────────────────
 
-/* ── WHITEBOARD SKETCH ─────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   WHITEBOARD SKETCH
+   Layout: Alternating zigzag flow — big circle number LEFT then RIGHT, flowing
+   down the page with dashed connector lines between rows.
+══════════════════════════════════════════════════════════════════════════════ */
 function WhiteboardRenderer({ infographic, title }) {
     const categories = infographic?.categories || [];
     const infTitle = infographic?.title || title;
     const infSubtitle = infographic?.subtitle || '';
-    const C = ['#e53e3e','#dd6b20','#2b6cb0','#6b46c1','#276749','#0987a0','#c53030','#b7791f','#2c7a7b','#553c9a'];
+    const COLORS = ['#e53e3e','#dd6b20','#2b6cb0','#6b46c1','#276749','#0987a0','#c53030','#b7791f','#2c7a7b','#553c9a'];
+
     return (
-        <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', borderRadius: 14, overflow: 'hidden', border: '3px solid #1a1a2e', boxShadow: '5px 5px 0 #1a1a2e' }}>
-            <div style={{ background: '#1a1a2e', padding: '16px 20px 12px', borderBottom: '4px solid #e53e3e', textAlign: 'center' }}>
-                <div style={{ display: 'inline-block', background: '#e53e3e', color: '#fff', fontSize: 10, fontWeight: 900, padding: '3px 14px', borderRadius: 3, marginBottom: 8, letterSpacing: 2, textTransform: 'uppercase' }}>📋 WHITEBOARD SKETCH</div>
+        <div style={{ fontFamily: "'Arial Black', Arial, sans-serif", background: '#ffffff', borderRadius: 16, overflow: 'hidden', border: '3px solid #1a1a1a', boxShadow: '6px 6px 0 #1a1a1a' }}>
+            {/* Header */}
+            <div style={{ background: '#1a1a1a', padding: '16px 20px 12px', textAlign: 'center' }}>
+                <div style={{ display: 'inline-block', background: '#e53e3e', color: '#fff', fontSize: 9, fontWeight: 900, padding: '2px 12px', borderRadius: 3, marginBottom: 8, letterSpacing: 2, textTransform: 'uppercase' }}>📋 WHITEBOARD SKETCH</div>
                 <h2 style={{ fontSize: 20, fontWeight: 900, color: '#fff', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: 2, lineHeight: 1.2 }}>{infTitle}</h2>
-                {infSubtitle && <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>{infSubtitle}</p>}
+                <div style={{ width: '60%', height: 2, background: '#e53e3e', margin: '0 auto' }} />
+                {infSubtitle && <p style={{ fontSize: 11, color: '#94a3b8', margin: '6px 0 0', fontFamily: 'Arial, sans-serif' }}>{infSubtitle}</p>}
             </div>
-            <div style={{ padding: '12px', background: '#f8fafc', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+
+            {/* Zigzag flow */}
+            <div style={{ padding: '12px 16px 8px', background: '#fafafa' }}>
                 {categories.map((cat, ci) => {
-                    const color = C[ci % C.length];
-                    const nodes = (cat.nodes || []).slice(0, 5);
+                    const color = COLORS[ci % COLORS.length];
+                    const nodes = (cat.nodes || []).slice(0, 4);
+                    const isEven = ci % 2 === 0;
                     return (
-                        <motion.div key={ci} initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: ci * 0.04 }}
-                            style={{ border: `2px dashed ${color}`, borderRadius: 8, background: '#fff', overflow: 'hidden' }}>
-                            <div style={{ background: color, padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 7 }}>
-                                <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    <span style={{ fontSize: 10, fontWeight: 900, color }}>{ci + 1}</span>
+                        <motion.div key={ci} initial={{ opacity: 0, x: isEven ? -20 : 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: ci * 0.06, type: 'spring', stiffness: 180 }}>
+                            {/* Connector line (not for first) */}
+                            {ci > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 4px' }}>
+                                    <div style={{ width: 2, height: 10, borderLeft: `2px dashed ${color}`, opacity: 0.5 }} />
                                 </div>
-                                <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.3 }}>{cat.icon && `${cat.icon} `}{cat.label}</span>
-                            </div>
-                            <div style={{ padding: '7px 10px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                {nodes.map((node, ni) => (
-                                    <div key={ni} style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                                        <span style={{ color, fontWeight: 900, fontSize: 13, lineHeight: '16px', flexShrink: 0 }}>→</span>
-                                        <div style={{ fontSize: 11, lineHeight: 1.4 }}>
-                                            <span style={{ fontWeight: 700, color: '#1a1a2e' }}>{node.label}</span>
-                                            {node.sublabel && <span style={{ color: '#64748b' }}>{' — '}{node.sublabel}</span>}
-                                        </div>
+                            )}
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexDirection: isEven ? 'row' : 'row-reverse', marginBottom: 4 }}>
+                                {/* Big circle number */}
+                                <div style={{ width: 38, height: 38, borderRadius: '50%', border: `3px solid ${color}`, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `3px 3px 0 ${color}` }}>
+                                    <span style={{ fontSize: 15, fontWeight: 900, color, fontFamily: "'Arial Black', sans-serif" }}>{ci + 1}</span>
+                                </div>
+                                {/* Content card */}
+                                <div style={{ flex: 1, border: `2px solid ${color}`, borderRadius: 8, background: '#fff', overflow: 'hidden' }}>
+                                    <div style={{ background: color, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        {cat.icon && <span style={{ fontSize: 13 }}>{cat.icon}</span>}
+                                        <span style={{ fontSize: 12, fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: 0.5 }}>{cat.label}</span>
                                     </div>
-                                ))}
+                                    <div style={{ padding: '7px 12px 9px', display: 'flex', flexWrap: 'wrap', gap: '4px 20px' }}>
+                                        {nodes.map((node, ni) => (
+                                            <div key={ni} style={{ display: 'flex', gap: 5, alignItems: 'flex-start', minWidth: '45%' }}>
+                                                <span style={{ color, fontWeight: 900, fontSize: 12, lineHeight: '16px', flexShrink: 0 }}>→</span>
+                                                <div style={{ fontSize: 11, lineHeight: 1.4, fontFamily: 'Arial, sans-serif' }}>
+                                                    <span style={{ fontWeight: 700, color: '#1a1a1a' }}>{node.label}</span>
+                                                    {node.sublabel && <span style={{ color: '#555' }}>{' '}{node.sublabel}</span>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     );
                 })}
             </div>
-            <div style={{ background: '#1a1a2e', padding: '7px', textAlign: 'center' }}>
-                <span style={{ fontSize: 10, color: '#94a3b8', letterSpacing: 1 }}>makepost.pro • Whiteboard Sketch</span>
+            <div style={{ background: '#1a1a1a', padding: '7px', textAlign: 'center' }}>
+                <span style={{ fontSize: 9, color: '#94a3b8', letterSpacing: 1, fontFamily: 'Arial, sans-serif' }}>makepost.pro • Whiteboard Sketch</span>
             </div>
         </div>
     );
 }
 
-/* ── CORPORATE MODERN ──────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   CORPORATE MODERN
+   Layout: Two-column table — left = colored number block + category name,
+   right = bullet content. Clean horizontal dividers between rows.
+══════════════════════════════════════════════════════════════════════════════ */
 function CorporateRenderer({ infographic, title }) {
     const categories = infographic?.categories || [];
     const infTitle = infographic?.title || title;
     const infSubtitle = infographic?.subtitle || '';
-    const C = ['#1d4ed8','#0891b2','#7c3aed','#059669','#dc2626','#d97706','#0284c7','#9333ea','#16a34a','#b45309'];
+    const COLS = [
+        { dark: '#1e3a8a', mid: '#1d4ed8', light: '#dbeafe' },
+        { dark: '#065f46', mid: '#059669', light: '#d1fae5' },
+        { dark: '#6b21a8', mid: '#7c3aed', light: '#ede9fe' },
+        { dark: '#7c2d12', mid: '#ea580c', light: '#ffedd5' },
+        { dark: '#134e4a', mid: '#0891b2', light: '#cffafe' },
+        { dark: '#713f12', mid: '#d97706', light: '#fef3c7' },
+        { dark: '#4c1d95', mid: '#8b5cf6', light: '#f5f3ff' },
+        { dark: '#881337', mid: '#e11d48', light: '#ffe4e6' },
+        { dark: '#14532d', mid: '#16a34a', light: '#dcfce7' },
+        { dark: '#1e3a5f', mid: '#0284c7', light: '#e0f2fe' },
+    ];
+
     return (
-        <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", background: '#eef4ff', borderRadius: 14, overflow: 'hidden', border: '1px solid #bfdbfe', boxShadow: '0 12px 40px rgba(30,58,138,0.18)' }}>
-            <div style={{ background: 'linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 55%,#3b82f6 100%)', padding: '18px 22px 14px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: -25, right: -25, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,0.07)' }} />
-                <div style={{ position: 'absolute', bottom: -35, left: 40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: '3px 14px', marginBottom: 8, border: '1px solid rgba(255,255,255,0.25)' }}>
-                    <span style={{ fontSize: 10, color: '#bfdbfe', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>💼 CORPORATE MODERN</span>
-                </div>
+        <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", background: '#f8faff', borderRadius: 16, overflow: 'hidden', border: '1px solid #e0e7ff', boxShadow: '0 12px 40px rgba(30,58,138,0.12)' }}>
+            {/* Gradient header */}
+            <div style={{ background: 'linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 60%,#60a5fa 100%)', padding: '18px 22px 14px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
+                <div style={{ position: 'absolute', bottom: -40, left: 20, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+                <div style={{ fontSize: 10, color: '#93c5fd', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6, position: 'relative' }}>💼 CORPORATE MODERN</div>
                 <h2 style={{ fontSize: 20, fontWeight: 800, color: '#fff', margin: '0 0 5px', lineHeight: 1.25, position: 'relative' }}>{infTitle}</h2>
-                {infSubtitle && <p style={{ fontSize: 12, color: '#93c5fd', margin: 0, position: 'relative' }}>{infSubtitle}</p>}
+                {infSubtitle && <p style={{ fontSize: 12, color: '#93c5fd', margin: 0, position: 'relative', fontStyle: 'italic' }}>{infSubtitle}</p>}
             </div>
-            <div style={{ padding: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+
+            {/* Table-style rows: left number+label | right bullets */}
+            <div style={{ background: '#fff' }}>
                 {categories.map((cat, ci) => {
-                    const color = C[ci % C.length];
-                    const nodes = (cat.nodes || []).slice(0, 5);
+                    const col = COLS[ci % COLS.length];
+                    const nodes = (cat.nodes || []).slice(0, 4);
                     return (
-                        <motion.div key={ci} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.04 }}
-                            style={{ borderRadius: 9, background: '#fff', boxShadow: `0 2px 14px ${color}15`, overflow: 'hidden', borderTop: `3px solid ${color}` }}>
-                            <div style={{ padding: '7px 12px', background: `${color}0a`, display: 'flex', alignItems: 'center', gap: 8, borderBottom: `1px solid ${color}18` }}>
-                                <div style={{ width: 22, height: 22, borderRadius: 6, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 2px 6px ${color}40` }}>
-                                    <span style={{ fontSize: 11, fontWeight: 900, color: '#fff' }}>{ci + 1}</span>
+                        <motion.div key={ci} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: ci * 0.05 }}
+                            style={{ display: 'flex', borderBottom: ci < categories.length - 1 ? '1px solid #e0e7ff' : 'none', minHeight: 56 }}>
+                            {/* Left: colored number panel */}
+                            <div style={{ width: 90, flexShrink: 0, background: col.dark, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 6px', gap: 3 }}>
+                                <div style={{ fontSize: 22, fontWeight: 900, color: col.light, lineHeight: 1, fontFamily: 'Georgia, serif' }}>
+                                    {String(ci + 1).padStart(2, '0')}
                                 </div>
-                                <span style={{ fontSize: 12, fontWeight: 700, color, lineHeight: 1.3 }}>{cat.icon && `${cat.icon} `}{cat.label}</span>
+                                <div style={{ fontSize: 9, color: col.light, opacity: 0.7, letterSpacing: 1, textAlign: 'center', textTransform: 'uppercase', lineHeight: 1.2 }}>{cat.icon || '●'}</div>
                             </div>
-                            <div style={{ padding: '7px 12px 9px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {/* Middle: category name */}
+                            <div style={{ width: 110, flexShrink: 0, background: col.light, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', borderRight: `2px solid ${col.mid}20` }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: col.dark, textAlign: 'center', lineHeight: 1.3, textTransform: 'uppercase', letterSpacing: 0.3 }}>{cat.label}</span>
+                            </div>
+                            {/* Right: bullets */}
+                            <div style={{ flex: 1, padding: '8px 14px', display: 'flex', flexWrap: 'wrap', gap: '3px 16px', alignContent: 'center' }}>
                                 {nodes.map((node, ni) => (
-                                    <div key={ni} style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
-                                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: color, marginTop: 5, flexShrink: 0 }} />
+                                    <div key={ni} style={{ display: 'flex', gap: 5, alignItems: 'flex-start', minWidth: '45%' }}>
+                                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: col.mid, marginTop: 4, flexShrink: 0 }} />
                                         <div style={{ fontSize: 11, lineHeight: 1.4 }}>
-                                            <span style={{ fontWeight: 600, color: '#1e3a5f' }}>{node.label}</span>
-                                            {node.sublabel && <span style={{ color: '#64748b' }}>{' — '}{node.sublabel}</span>}
+                                            <span style={{ fontWeight: 600, color: '#1e293b' }}>{node.label}</span>
+                                            {node.sublabel && <span style={{ color: '#64748b', fontSize: 10 }}>{' — '}{node.sublabel}</span>}
                                         </div>
                                     </div>
                                 ))}
@@ -152,57 +197,73 @@ function CorporateRenderer({ infographic, title }) {
                 })}
             </div>
             <div style={{ background: '#1e3a8a', padding: '7px', textAlign: 'center' }}>
-                <span style={{ fontSize: 10, color: '#93c5fd', letterSpacing: 1 }}>makepost.pro • Corporate Modern</span>
+                <span style={{ fontSize: 9, color: '#93c5fd', letterSpacing: 1 }}>makepost.pro • Corporate Modern</span>
             </div>
         </div>
     );
 }
 
-/* ── EXECUTIVE GUIDE (DARK) ────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   EXECUTIVE GUIDE
+   Layout: Full-width numbered rows. Each row = giant glowing number on left
+   + category title + tags across the full width. Dark terminal aesthetic.
+══════════════════════════════════════════════════════════════════════════════ */
 function ExecutiveRenderer({ infographic, title }) {
     const categories = infographic?.categories || [];
     const infTitle = infographic?.title || title;
     const infSubtitle = infographic?.subtitle || '';
-    const C = ['#58a6ff','#3fb950','#f78166','#d2a8ff','#ffa657','#79c0ff','#56d364','#ff7b72','#cae8ff','#ffdcd7'];
+    const GLOWS = ['#58a6ff','#3fb950','#f78166','#d2a8ff','#ffa657','#79c0ff','#56d364','#ff7b72','#cae8ff','#ffdcd7'];
+
     return (
-        <div style={{ fontFamily: "'Consolas','Courier New',monospace", background: '#0d1117', borderRadius: 14, overflow: 'hidden', border: '1px solid #30363d', boxShadow: '0 0 0 1px #21262d, 0 16px 50px rgba(0,0,0,0.6)' }}>
-            <div style={{ background: 'linear-gradient(180deg,#161b22 0%,#0d1117 100%)', padding: '18px 22px 14px', borderBottom: '1px solid #21262d', textAlign: 'center' }}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(88,166,255,0.12)', borderRadius: 6, padding: '3px 12px', marginBottom: 8, border: '1px solid rgba(88,166,255,0.3)' }}>
-                    <span style={{ fontSize: 10, color: '#58a6ff', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2 }}>⚡ EXECUTIVE GUIDE</span>
+        <div style={{ fontFamily: "'Consolas','Courier New',monospace", background: '#0d1117', borderRadius: 16, overflow: 'hidden', border: '1px solid #30363d', boxShadow: '0 0 0 1px #21262d, 0 20px 60px rgba(0,0,0,0.7)' }}>
+            {/* Header */}
+            <div style={{ background: '#161b22', padding: '16px 22px 14px', borderBottom: '2px solid #21262d', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                    <div style={{ fontSize: 9, color: '#58a6ff', fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 5 }}>⚡ EXECUTIVE GUIDE</div>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: '#f0f6fc', margin: 0, lineHeight: 1.25 }}>{infTitle}</h2>
+                    {infSubtitle && <p style={{ fontSize: 11, color: '#8b949e', margin: '4px 0 0', fontFamily: 'sans-serif' }}>{infSubtitle}</p>}
                 </div>
-                <h2 style={{ fontSize: 19, fontWeight: 700, color: '#f0f6fc', margin: '0 0 5px', lineHeight: 1.25 }}>{infTitle}</h2>
-                {infSubtitle && <p style={{ fontSize: 12, color: '#8b949e', margin: 0 }}>{infSubtitle}</p>}
+                <div style={{ fontSize: 28, opacity: 0.3 }}>{'</>'}</div>
             </div>
-            <div style={{ padding: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+
+            {/* Full-width numbered rows */}
+            <div style={{ padding: '8px 0' }}>
                 {categories.map((cat, ci) => {
-                    const color = C[ci % C.length];
+                    const glow = GLOWS[ci % GLOWS.length];
                     const nodes = (cat.nodes || []).slice(0, 5);
                     return (
-                        <motion.div key={ci} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ci * 0.04 }}
-                            style={{ borderRadius: 8, background: '#161b22', border: `1px solid ${color}28`, overflow: 'hidden', boxShadow: `0 0 12px ${color}10` }}>
-                            <div style={{ padding: '7px 12px', borderBottom: `1px solid ${color}20`, display: 'flex', alignItems: 'center', gap: 8, background: `${color}08` }}>
-                                <div style={{ width: 20, height: 20, borderRadius: 4, background: `${color}22`, border: `1px solid ${color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    <span style={{ fontSize: 10, fontWeight: 700, color }}>{ci + 1}</span>
-                                </div>
-                                <span style={{ fontSize: 11, fontWeight: 600, color, textTransform: 'uppercase', letterSpacing: 0.8, lineHeight: 1.3 }}>{cat.icon && `${cat.icon} `}{cat.label}</span>
-                            </div>
-                            <div style={{ padding: '7px 12px 9px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                {nodes.map((node, ni) => (
-                                    <div key={ni} style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
-                                        <span style={{ color, fontSize: 11, lineHeight: '16px', flexShrink: 0 }}>▸</span>
-                                        <div style={{ fontSize: 11, lineHeight: 1.4 }}>
-                                            <span style={{ fontWeight: 600, color: '#c9d1d9' }}>{node.label}</span>
-                                            {node.sublabel && <span style={{ color: '#6e7681' }}>{' — '}{node.sublabel}</span>}
-                                        </div>
+                        <motion.div key={ci} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: ci * 0.05 }}
+                            style={{ borderBottom: '1px solid #21262d', padding: '10px 16px', background: ci % 2 === 0 ? '#0d1117' : '#111820' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                                {/* Giant number */}
+                                <div style={{ width: 44, flexShrink: 0, textAlign: 'center' }}>
+                                    <div style={{ fontSize: 28, fontWeight: 900, color: glow, lineHeight: 1, textShadow: `0 0 12px ${glow}60` }}>
+                                        {String(ci + 1).padStart(2, '0')}
                                     </div>
-                                ))}
+                                </div>
+                                {/* Content */}
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                        <span style={{ fontSize: 13, fontWeight: 700, color: glow, textTransform: 'uppercase', letterSpacing: 1.2 }}>{cat.icon && `${cat.icon} `}{cat.label}</span>
+                                        <div style={{ flex: 1, height: 1, background: `${glow}30` }} />
+                                    </div>
+                                    {/* Tags row for each bullet */}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                                        {nodes.map((node, ni) => (
+                                            <div key={ni} style={{ background: `${glow}12`, border: `1px solid ${glow}30`, borderRadius: 4, padding: '2px 8px', fontSize: 10, fontFamily: 'sans-serif' }}>
+                                                <span style={{ color: '#c9d1d9', fontWeight: 600 }}>{node.label}</span>
+                                                {node.sublabel && <span style={{ color: '#6e7681', marginLeft: 4 }}>{node.sublabel}</span>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     );
                 })}
             </div>
             <div style={{ background: '#010409', padding: '7px', textAlign: 'center', borderTop: '1px solid #21262d' }}>
-                <span style={{ fontSize: 10, color: '#484f58', letterSpacing: 1 }}>makepost.pro • Executive Guide</span>
+                <span style={{ fontSize: 9, color: '#484f58', letterSpacing: 1 }}>makepost.pro • Executive Guide</span>
             </div>
         </div>
     );
