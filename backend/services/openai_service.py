@@ -233,25 +233,27 @@ QUALITY RULES:
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {
-                    "role": "system",
-                    "content": system_content
-                },
+                {"role": "system", "content": system_content},
                 {"role": "user", "content": prompt}
             ],
             response_format={"type": "json_object"},
-            max_tokens=4000,
+            max_tokens=1800,   # actual output ~1400-1600 tokens; 4000 was wasteful
+            temperature=0.7,
+            top_p=0.9,
         )
 
         content = json.loads(completion.choices[0].message.content)
 
-        # Generate infographic image (Pillow renderer primary, DALL-E fallback)
-        try:
-            image_url = generate_infographic_image(title, content, style)
-            if image_url:
-                content["infographic_image_url"] = image_url
-        except Exception as img_err:
-            print(f"[Infographic] generation failed (non-fatal): {img_err}")
+        # Generate Pillow image in background thread — don't block the API response
+        import threading
+        def _render_bg():
+            try:
+                url = generate_infographic_image(title, content, style)
+                if url:
+                    content["infographic_image_url"] = url
+            except Exception as e:
+                print(f"[Infographic] bg render failed: {e}")
+        threading.Thread(target=_render_bg, daemon=True).start()
 
         return content
     except Exception as e:
