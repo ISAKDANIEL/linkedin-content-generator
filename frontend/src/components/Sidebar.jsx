@@ -159,7 +159,6 @@ export default function Sidebar({ onNewPost, onSelectHistory, currentHistoryId }
                             {!collapsed && (
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate leading-tight">{item.title}</p>
-                                    <p className="text-xs text-slate-400"><TimeAgo dateStr={item.created_at} /></p>
                                 </div>
                             )}
                             {!collapsed && (

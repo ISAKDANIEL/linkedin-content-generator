@@ -87,49 +87,147 @@ def generate_linkedin_post(title: str, tone: str, audience: str, style: str = "W
         print("OpenAI API key missing.")
         return None
     try:
-        prompt = f"""
-You are a world-class LinkedIn content strategist and expert infographic designer.
+        is_handwritten = style == "Handwritten Notes"
 
-Create a comprehensive, deeply informative LinkedIn post about: "{title}"
-Tone: {tone}
-Target Audience: {audience}
+        if is_handwritten:
+            system_content = (
+                "You are a sharp, experienced professional who takes handwritten notes while learning. "
+                "Your LinkedIn posts feel like someone's personal notebook — raw, honest, and genuinely insightful. "
+                "No corporate fluff. No emoji overload. Just clear, flowing thoughts written like ink on paper. "
+                "Return ONLY strictly valid JSON — no markdown, no code fences, no extra text. "
+                "Generate EXACTLY 10 categories with EXACTLY 5-6 nodes each (category 7 must have 6 nodes). "
+                "Node sublabels must read like handwritten margin notes — conversational, specific, human (10-14 words). "
+                "Category labels: 2-3 words maximum. Use warm, muted hex colors that feel like colored pens/markers. "
+                "The output should feel like a well-studied notebook page anyone would want to photograph and share."
+            )
+            prompt = f"""Write a LinkedIn post about "{title}" that reads like personal handwritten notes — genuine, flowing, and insightful.
+Tone: {tone} | Audience: {audience or 'professionals and curious learners'}
 
-Return a JSON object with EXACTLY this structure:
+The post should feel like someone actually sat down, studied this topic, and jotted down what they learned.
+No excessive emojis. Use "—" dashes, short punchy lines, and a conversational rhythm. Like ink on paper.
+
+Return ONLY valid JSON (no markdown, no code fences):
 {{
-    "hook": "A single powerful, curiosity-triggering opening sentence (max 20 words)",
-    "body": "Full body with 7-9 key insights, each on a new line starting with a relevant emoji. Each point should be specific, actionable, and valuable. Include a surprising stat or fact where possible.",
-    "cta": "A compelling call-to-action sentence that drives engagement (comment/share/save)",
-    "hashtags": ["#Tag1", "#Tag2", "#Tag3", "#Tag4", "#Tag5", "#Tag6", "#Tag7", "#Tag8"],
+    "hook": "A single honest, curious, or surprising opening line (max 18 words) — sounds like a real thought, not an ad",
+    "body": "7-8 lines that read like handwritten notes. Use '—' or simple line breaks. Mix short observations with one surprising fact or number. No emoji per line — use 1-2 total max. Sound like a real person thinking out loud.",
+    "cta": "A genuine, low-pressure question that invites readers to share their own notes or experience",
+    "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6"],
+    "style": "{style}",
     "infographic": {{
-        "title": "Concise infographic title (4-7 words maximum)",
-        "subtitle": "One-line tagline summarizing the full scope of the topic",
+        "title": "Short punchy title (3-5 words max, specific to topic)",
+        "subtitle": "Subtitle as a curious question someone would write at the top of their notes",
         "categories": [
             {{
                 "id": 1,
-                "label": "Section Name (2-4 words)",
-                "color": "#hex_color",
-                "icon": "single relevant emoji",
+                "label": "2-3 word name",
+                "color": "#c05621",
+                "icon": "relevant emoji",
                 "nodes": [
-                    {{"label": "Key concept or term", "sublabel": "Precise explanation in 8-14 words"}},
-                    {{"label": "Key concept or term", "sublabel": "Precise explanation in 8-14 words"}},
-                    {{"label": "Key concept or term", "sublabel": "Precise explanation in 8-14 words"}},
-                    {{"label": "Key concept or term", "sublabel": "Precise explanation in 8-14 words"}},
-                    {{"label": "Key concept or term", "sublabel": "Precise explanation in 8-14 words"}},
-                    {{"label": "Key concept or term", "sublabel": "Precise explanation in 8-14 words"}}
+                    {{"label": "Specific term (2-4 words)", "sublabel": "Written like a margin note — specific and real (10-14 words)"}},
+                    {{"label": "Specific term (2-4 words)", "sublabel": "Written like a margin note — specific and real (10-14 words)"}},
+                    {{"label": "Specific term (2-4 words)", "sublabel": "Written like a margin note — specific and real (10-14 words)"}},
+                    {{"label": "Specific term (2-4 words)", "sublabel": "Written like a margin note — specific and real (10-14 words)"}},
+                    {{"label": "Specific term (2-4 words)", "sublabel": "Written like a margin note — specific and real (10-14 words)"}}
                 ]
             }}
         ]
     }}
 }}
 
-INFOGRAPHIC RULES — CRITICAL:
-- Generate EXACTLY 8-10 categories that comprehensively cover "{title}" from fundamentals to advanced.
-- Category progression: Basics → Core Concepts → Intermediate → Advanced → Tools/Libraries → Best Practices → Real-World Applications → Common Mistakes → Performance & Optimization → Future Trends
-- Each category MUST have EXACTLY 5-6 nodes (no fewer, no more).
-- Use a different vibrant hex color for each category.
-- Node labels: specific technical/domain terms (2-5 words, concise).
-- Node sublabels: accurate, educational detail (8-14 words each, specific facts/techniques).
-- The infographic must be a complete standalone study guide on "{title}".
+GENERATE EXACTLY 10 CATEGORIES in this precise order:
+━━━ HUB DIAGRAM SPOKES (categories 1-6) ━━━
+1. Foundations — core definitions and origins
+2. Key Components — main building blocks
+3. How It Works — the mechanism/process
+4. Core Benefits — top value propositions
+5. Real Applications — use cases and industries
+6. Tools & Stack — software, frameworks, tech
+
+━━━ BOTTOM-LEFT PANEL (category 7) ━━━
+7. Types & Variants — ALL major types/variations of "{title}" — MUST have exactly 6 nodes, each node label is a specific type name (3-5 words), sublabel explains it in 10-12 words
+
+━━━ BOTTOM-RIGHT ROWS (categories 8-10) ━━━
+8. Best Practices — top proven techniques (exactly 3 nodes)
+9. Common Pitfalls — biggest mistakes to avoid (exactly 3 nodes)
+10. Future Trends — what's emerging now (exactly 3 nodes)
+
+COLOR RULES: use WARM, MUTED tones that feel like colored ink pens or highlighters on paper:
+Category 1: #c05621 (burnt orange), 2: #744210 (brown), 3: #2c7a7b (teal ink),
+4: #276749 (forest green), 5: #6b46c1 (purple ink), 6: #2b6cb0 (blue ink),
+7: #97266d (deep pink), 8: #e53e3e (red pen), 9: #1a365d (navy), 10: #553c9a (indigo)
+
+QUALITY RULES:
+- Node labels: specific domain terms (NOT generic like "Overview" or "Introduction")
+- Node sublabels: conversational, precise — written like someone's real margin notes
+- Make every section feel like a page from a well-studied notebook on "{title}"
+"""
+        else:
+            system_content = (
+                "You are the world's best LinkedIn content strategist and infographic architect. "
+                "You create viral educational content and comprehensive visual study guides. "
+                "Return ONLY strictly valid JSON — no markdown, no code fences, no extra text. "
+                "Generate EXACTLY 10 categories with EXACTLY 5-6 nodes each (category 7 must have 6 nodes). "
+                "Node sublabels must be specific, accurate, educational (10-14 words with real details). "
+                "Category labels: 2-3 words maximum. Use vivid distinct hex colors for each category. "
+                "The output must be a complete, expert-level learning resource about the topic."
+            )
+            prompt = f"""You are the world's #1 LinkedIn content strategist and infographic architect. Create a VIRAL, deeply educational LinkedIn post about: "{title}"
+Tone: {tone} | Audience: {audience or 'professionals and ambitious learners'}
+
+Return ONLY valid JSON (no markdown, no code fences):
+{{
+    "hook": "One electrifying sentence that stops scrolling (max 18 words, shocking stat or bold claim)",
+    "body": "8 specific insights, each line starts with a unique emoji. Include real numbers/percentages. Make each insight immediately actionable and surprising.",
+    "cta": "High-engagement question that makes readers comment their opinion or experience",
+    "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6","#Tag7","#Tag8"],
+    "style": "{style}",
+    "infographic": {{
+        "title": "Short punchy title (3-5 words max, specific to topic)",
+        "subtitle": "Subtitle as a compelling how/what/why question about the topic",
+        "categories": [
+            {{
+                "id": 1,
+                "label": "2-3 word name",
+                "color": "#e53e3e",
+                "icon": "relevant emoji",
+                "nodes": [
+                    {{"label": "Specific term (2-4 words)", "sublabel": "Precise explanation with detail (10-14 words)"}},
+                    {{"label": "Specific term (2-4 words)", "sublabel": "Precise explanation with detail (10-14 words)"}},
+                    {{"label": "Specific term (2-4 words)", "sublabel": "Precise explanation with detail (10-14 words)"}},
+                    {{"label": "Specific term (2-4 words)", "sublabel": "Precise explanation with detail (10-14 words)"}},
+                    {{"label": "Specific term (2-4 words)", "sublabel": "Precise explanation with detail (10-14 words)"}}
+                ]
+            }}
+        ]
+    }}
+}}
+
+GENERATE EXACTLY 10 CATEGORIES in this precise order (each serves a specific layout role):
+━━━ HUB DIAGRAM SPOKES (categories 1-6) ━━━
+1. Foundations — core definitions and origins
+2. Key Components — main building blocks
+3. How It Works — the mechanism/process
+4. Core Benefits — top value propositions
+5. Real Applications — use cases and industries
+6. Tools & Stack — software, frameworks, tech
+
+━━━ BOTTOM-LEFT PANEL (category 7) ━━━
+7. Types & Variants — ALL major types/variations of "{title}" — MUST have exactly 6 nodes, each node label is a specific type name (3-5 words), sublabel explains it in 10-12 words
+
+━━━ BOTTOM-RIGHT ROWS (categories 8-10) ━━━
+8. Best Practices — top proven techniques (exactly 3 nodes)
+9. Common Pitfalls — biggest mistakes to avoid (exactly 3 nodes)
+10. Future Trends — what's emerging in 2024-2025 (exactly 3 nodes)
+
+COLOR RULES: use VIVID distinct hex colors — each category gets a DIFFERENT bright color:
+Category 1: #e53e3e (red), 2: #dd6b20 (orange), 3: #2b6cb0 (blue), 4: #276749 (green),
+5: #6b46c1 (purple), 6: #c05621 (dark orange), 7: #2c7a7b (teal), 8: #97266d (pink),
+9: #744210 (brown), 10: #1a365d (navy)
+
+QUALITY RULES:
+- Node labels: specific domain terms (NOT generic words like "Overview" or "Introduction")
+- Node sublabels: precise, educational, include numbers/stats where possible
+- Make the infographic a complete standalone learning resource on "{title}"
 """
 
         completion = client.chat.completions.create(
@@ -137,14 +235,7 @@ INFOGRAPHIC RULES — CRITICAL:
             messages=[
                 {
                     "role": "system",
-                    "content": (
-                        "You are a world-class LinkedIn content strategist and expert infographic designer. "
-                        "You specialize in creating deeply informative, comprehensive study guides and educational content. "
-                        "Always return strictly valid JSON with no markdown, no code fences, no extra text. "
-                        "Always generate exactly 8-10 categories with exactly 5-6 nodes each. "
-                        "Node sublabels must be specific, accurate, and educational (8-14 words). "
-                        "Category labels must be concise (2-4 words). Colors must be varied vibrant hex codes."
-                    )
+                    "content": system_content
                 },
                 {"role": "user", "content": prompt}
             ],

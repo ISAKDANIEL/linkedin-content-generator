@@ -13,7 +13,7 @@ IMAGES_DIR = os.path.join(os.path.dirname(__file__), '..', 'static', 'images')
 os.makedirs(IMAGES_DIR, exist_ok=True)
 
 # ── Fixed LinkedIn canvas ──────────────────────────────────────────────────────
-W, H = 1080, 1350   # exact 4:5 portrait
+W, H = 1080, 1350   # exact 4:5 LinkedIn portrait
 
 # ── Section color palette ──────────────────────────────────────────────────────
 SECTION_COLORS = [
@@ -153,7 +153,6 @@ def render_infographic(title: str, content_data: dict, style: str = "Whiteboard"
         SEC_H = available_h // n   # exact height per section card
 
         # ── Font sizes scale with section height ──────────────────────────────
-        # Baseline: 115px section → standard font sizes
         scale = SEC_H / 115
         scale = max(0.60, min(1.20, scale))
 
@@ -214,9 +213,8 @@ def render_infographic(title: str, content_data: dict, style: str = "Whiteboard"
         draw.rectangle([PAD, HDR_H - 4, W - PAD, HDR_H - 1], fill=T["HDR_ACCENT"])
 
         # ── Section cards ─────────────────────────────────────────────────────
-        # Calculate max bullets we can fit per card
         LINE_H    = max(13, int(14 * scale))
-        heading_h = BADGE_SZ + INNER          # badge row height
+        heading_h = BADGE_SZ + INNER
         bullet_zone = SEC_H - INNER * 2 - heading_h - 6
         MAX_LINES = max(2, bullet_zone // (LINE_H + 3))
 
