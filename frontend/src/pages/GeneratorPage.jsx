@@ -22,6 +22,12 @@ async function downloadInfographic(ref, title) {
             pixelRatio: 2,           // 2× for crisp high-res output
             backgroundColor: '#ffffff',
             style: { borderRadius: '0' },
+            skipFonts: true,         // skip cross-origin Google Fonts CSS (prevents SecurityError)
+            onClone: (clonedDoc) => {
+                clonedDoc.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+                    if (link.href && link.href.includes('googleapis.com')) link.remove();
+                });
+            },
         });
         const a = document.createElement('a');
         a.href = dataUrl;
@@ -126,16 +132,19 @@ function CorporateRenderer({ infographic, title }) {
     const categories = infographic?.categories || [];
     const infTitle = infographic?.title || title;
     const infSubtitle = infographic?.subtitle || '';
+    // Compact mode: many categories → smaller chrome, labels-only nodes so everything fits
+    const compact = categories.length >= 7;
 
     return (
         <div style={{ fontFamily: "'Segoe UI',system-ui,sans-serif", background: '#f8faff', borderRadius: 16, overflow: 'hidden', border: '1px solid #e0e7ff', boxShadow: '0 16px 48px rgba(30,58,138,0.14)', height: '100%', display: 'flex', flexDirection: 'column' }}>
             {/* Gradient header */}
-            <div style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e3a8a 50%,#1d4ed8 100%)', padding: '14px 20px 12px', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+            <div style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e3a8a 50%,#1d4ed8 100%)', padding: compact ? '8px 16px 7px' : '14px 20px 12px', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
                 <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
-                <div style={{ fontSize: 9, color: '#93c5fd', fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 5, position: 'relative' }}>💼 CORPORATE MODERN</div>
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: '#fff', margin: '0 0 4px', lineHeight: 1.2, position: 'relative' }}>{infTitle}</h2>
-                {infSubtitle && <p style={{ fontSize: 10, color: '#93c5fd', margin: 0, position: 'relative', fontStyle: 'italic' }}>{infSubtitle}</p>}
-                <div style={{ display: 'flex', gap: 3, marginTop: 8, position: 'relative' }}>
+                <div style={{ fontSize: 8, color: '#93c5fd', fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: compact ? 3 : 5, position: 'relative' }}>💼 CORPORATE MODERN</div>
+                <h2 style={{ fontSize: compact ? 15 : 18, fontWeight: 800, color: '#fff', margin: compact ? '0 0 2px' : '0 0 4px', lineHeight: 1.2, position: 'relative' }}>{infTitle}</h2>
+                {!compact && infSubtitle && <p style={{ fontSize: 10, color: '#93c5fd', margin: 0, position: 'relative', fontStyle: 'italic' }}>{infSubtitle}</p>}
+                {compact && infSubtitle && <p style={{ fontSize: 8, color: '#93c5fd', margin: 0, position: 'relative', fontStyle: 'italic', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{infSubtitle}</p>}
+                <div style={{ display: 'flex', gap: 3, marginTop: compact ? 5 : 8, position: 'relative' }}>
                     {categories.slice(0, 10).map((_, i) => (
                         <motion.div key={i} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: i * 0.05, duration: 0.3 }}
                             style={{ height: 3, flex: 1, background: i < 3 ? '#60a5fa' : i < 6 ? '#93c5fd' : '#bfdbfe', borderRadius: 2, transformOrigin: 'left' }} />
@@ -143,36 +152,64 @@ function CorporateRenderer({ infographic, title }) {
                 </div>
             </div>
 
-            {/* Rows — flex:1 fills remaining height, each row flex:1 */}
+            {/* Rows — each row is flex:1 of remaining height */}
             <div style={{ flex: 1, background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 {categories.map((cat, ci) => {
                     const color = cat.color || '#1d4ed8';
                     const nodes = (cat.nodes || []).slice(0, 3);
                     return (
                         <motion.div key={ci}
-                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: ci * 0.05 }}
-                            style={{ display: 'flex', flex: 1, minHeight: 0, borderBottom: ci < categories.length - 1 ? '1px solid #f0f4ff' : 'none', background: ci % 2 === 0 ? '#fff' : '#fafcff' }}
+                            initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: ci * 0.04 }}
+                            style={{
+                                display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden',
+                                alignItems: 'stretch',
+                                borderBottom: ci < categories.length - 1 ? '1px solid #f0f4ff' : 'none',
+                                background: ci % 2 === 0 ? '#fff' : '#fafcff',
+                            }}
                         >
-                            <div style={{ width: 4, flexShrink: 0, background: `linear-gradient(to bottom, ${color}, ${color}80)` }} />
-                            <div style={{ width: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}>
-                                <div style={{ width: 30, height: 30, borderRadius: '50%', background: `${color}15`, border: `2px solid ${color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <span style={{ fontSize: 13 }}>{cat.icon || '●'}</span>
+                            {/* Left accent bar */}
+                            <div style={{ width: 4, flexShrink: 0, background: `linear-gradient(to bottom, ${color}, ${color}60)` }} />
+
+                            {/* Icon */}
+                            <div style={{ width: compact ? 34 : 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: compact ? 22 : 30, height: compact ? 22 : 30, borderRadius: '50%', background: `${color}18`, border: `2px solid ${color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span style={{ fontSize: compact ? 9 : 13 }}>{cat.icon || '●'}</span>
                                 </div>
                             </div>
-                            <div style={{ width: 90, flexShrink: 0, display: 'flex', alignItems: 'center', padding: '4px 6px 4px 0', borderRight: `1px solid ${color}15` }}>
-                                <div>
-                                    <div style={{ fontSize: 10, fontWeight: 800, color, textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1.3 }}>{cat.label}</div>
-                                    <div style={{ fontSize: 8, color: '#94a3b8', marginTop: 1 }}>{ci + 1}/{categories.length}</div>
+
+                            {/* Category label */}
+                            <div style={{ width: compact ? 66 : 90, flexShrink: 0, display: 'flex', alignItems: 'center', padding: compact ? '2px 4px 2px 0' : '4px 6px 4px 0', borderRight: `1px solid ${color}18` }}>
+                                <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                                    <div style={{
+                                        fontSize: compact ? 7.5 : 10, fontWeight: 800, color,
+                                        textTransform: 'uppercase', letterSpacing: 0.3, lineHeight: 1.25,
+                                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden',
+                                    }}>{cat.label}</div>
+                                    <div style={{ fontSize: 7, color: '#94a3b8', marginTop: 1 }}>{ci + 1}/{categories.length}</div>
                                 </div>
                             </div>
-                            <div style={{ flex: 1, padding: '4px 10px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+
+                            {/* Bullet nodes */}
+                            <div style={{ flex: 1, minWidth: 0, padding: compact ? '0 8px' : '4px 10px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: compact ? 1 : 2, overflow: 'hidden' }}>
                                 {nodes.map((node, ni) => (
-                                    <div key={ni} style={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
-                                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: color, marginTop: 3, flexShrink: 0 }} />
-                                        <div style={{ fontSize: 10, lineHeight: 1.3 }}>
-                                            <span style={{ fontWeight: 700, color: '#1e293b' }}>{node.label}</span>
-                                            {node.sublabel && <span style={{ color: '#64748b', fontSize: 9 }}>{' — '}{node.sublabel}</span>}
+                                    <div key={ni} style={{ display: 'flex', gap: 4, alignItems: 'center', overflow: 'hidden', minHeight: 0 }}>
+                                        <div style={{ width: compact ? 4 : 5, height: compact ? 4 : 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                                        <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
+                                            <span style={{
+                                                fontWeight: 700, color: '#1e293b',
+                                                fontSize: compact ? 9 : 10, lineHeight: 1.25,
+                                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                                display: 'block',
+                                            }}>{node.label}</span>
+                                            {!compact && node.sublabel && (
+                                                <span style={{
+                                                    color: '#64748b', fontSize: 8, lineHeight: 1.2,
+                                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                                    display: 'block',
+                                                }}>{' — '}{node.sublabel}</span>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -181,6 +218,7 @@ function CorporateRenderer({ infographic, title }) {
                     );
                 })}
             </div>
+
             <div style={{ background: 'linear-gradient(90deg,#0f172a,#1e3a8a)', padding: '5px', textAlign: 'center', flexShrink: 0 }}>
                 <span style={{ fontSize: 9, color: '#93c5fd', letterSpacing: 1.5 }}>makepost.pro • Corporate Modern</span>
             </div>
@@ -277,191 +315,212 @@ function ExecutiveRenderer({ infographic, title }) {
    │                        └────────────────────────-┘   │
    └─────────────────────────────────────────────────────┘
 ══════════════════════════════════════════════════════════════════════════════ */
+// ── Shared HW grid helper — maps categories onto a CSS grid (2 cols × N rows)
+// Each cell gets an equal fraction of height; overflow:hidden prevents bleed.
+function HWCategoryGrid({ categories, renderCell, gridStyle = {} }) {
+    const rows = Math.ceil(categories.length / 2);
+    return (
+        <div style={{
+            flex: 1, display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gridTemplateRows: `repeat(${rows}, 1fr)`,
+            overflow: 'hidden',
+            ...gridStyle,
+        }}>
+            {categories.map((cat, i) => renderCell(cat, i))}
+        </div>
+    );
+}
+
 // ── Notebook Variant 0: Classic Ruled Paper (cream + blue lines + red margin) ─
 function HWRuledPaper({ infographic, title, HF }) {
-    const categories = infographic?.categories || [];
-    const infTitle   = infographic?.title || title;
+    const categories  = infographic?.categories || [];
+    const infTitle    = infographic?.title || title;
     const infSubtitle = infographic?.subtitle || '';
-    const left  = categories.slice(0, 5);
-    const right = categories.slice(5, 10);
     return (
         <div style={{ fontFamily: HF, height: '100%', display: 'flex', flexDirection: 'column', background: '#fefdf5', backgroundImage: 'repeating-linear-gradient(transparent, transparent 24px, #c8d8f0 24px, #c8d8f0 25px)', border: '1px solid #c8bca0', borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
             {/* Red margin line */}
-            <div style={{ position: 'absolute', left: 42, top: 0, bottom: 0, width: 1.5, background: '#e8a0a0', zIndex: 1, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', left: 40, top: 0, bottom: 0, width: 1.5, background: '#e8a0a0', zIndex: 1, pointerEvents: 'none' }} />
             {/* Title */}
-            <div style={{ paddingLeft: 54, paddingRight: 14, paddingTop: 10, paddingBottom: 5, flexShrink: 0, position: 'relative', zIndex: 2 }}>
-                <div style={{ fontSize: 23, fontWeight: 700, color: '#111', fontFamily: HF, letterSpacing: 0.5, lineHeight: 1.2 }}>{infTitle}</div>
-                <div style={{ width: '88%', height: 2, background: '#333', margin: '4px 0 2px', borderRadius: 1 }} />
-                {infSubtitle && <div style={{ fontSize: 11, color: '#888', fontFamily: HF, fontStyle: 'italic' }}>{infSubtitle}</div>}
+            <div style={{ paddingLeft: 52, paddingRight: 12, paddingTop: 8, paddingBottom: 4, flexShrink: 0, position: 'relative', zIndex: 2 }}>
+                <div style={{ fontSize: 21, fontWeight: 700, color: '#111', fontFamily: HF, letterSpacing: 0.5, lineHeight: 1.2 }}>{infTitle}</div>
+                <div style={{ width: '90%', height: 2.5, background: 'linear-gradient(to right,#222,#888)', margin: '3px 0 2px', borderRadius: 1 }} />
+                {infSubtitle && <div style={{ fontSize: 10, color: '#888', fontFamily: HF, fontStyle: 'italic' }}>{infSubtitle}</div>}
             </div>
-            {/* 2-column notes */}
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', paddingLeft: 54, paddingRight: 14, paddingBottom: 4, gap: '0 16px', overflow: 'hidden', position: 'relative', zIndex: 2 }}>
-                {[left, right].map((col, ci) => (
-                    <div key={ci} style={{ display: 'flex', flexDirection: 'column' }}>
-                        {col.map((cat, i) => {
-                            const idx = ci === 0 ? i : i + 5;
-                            const color = cat.color || '#333';
-                            return (
-                                <div key={i} style={{ flex: 1, minHeight: 0, paddingTop: 3 }}>
-                                    <div style={{ fontSize: 12, fontWeight: 700, color, fontFamily: HF, textDecoration: 'underline', textDecorationColor: `${color}90`, textUnderlineOffset: 2, marginBottom: 1, lineHeight: 1.3 }}>
-                                        {idx + 1}. {cat.icon} {cat.label}
-                                    </div>
-                                    {(cat.nodes || []).slice(0, 3).map((n, ni) => (
-                                        <div key={ni} style={{ display: 'flex', gap: 4, paddingLeft: 8, alignItems: 'flex-start' }}>
-                                            <span style={{ color: '#aaa', fontSize: 13, lineHeight: '18px', flexShrink: 0 }}>–</span>
-                                            <span style={{ fontSize: 10, fontFamily: HF, color: '#2a2a2a', lineHeight: 1.6 }}>
-                                                <strong style={{ color }}>{n.label}</strong>
-                                                {n.sublabel && <span style={{ color: '#777', fontWeight: 400, fontSize: 9.5 }}>: {n.sublabel}</span>}
-                                            </span>
-                                        </div>
-                                    ))}
+            {/* Grid */}
+            <HWCategoryGrid
+                categories={categories}
+                gridStyle={{ paddingLeft: 52, paddingRight: 10, paddingBottom: 4, gap: '2px 10px', position: 'relative', zIndex: 2 }}
+                renderCell={(cat, i) => {
+                    const color = cat.color || '#1d6fb8';
+                    return (
+                        <div key={i} style={{ overflow: 'hidden', padding: '4px 2px 2px', borderBottom: `1.5px solid ${color}30`, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            {/* Category header */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+                                <span style={{ fontSize: 13, flexShrink: 0 }}>{cat.icon || '📌'}</span>
+                                <span style={{ fontSize: 11, fontWeight: 700, color, fontFamily: HF, textDecoration: 'underline', textDecorationColor: `${color}80`, textUnderlineOffset: 2, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {i + 1}. {cat.label}
+                                </span>
+                            </div>
+                            {/* Nodes */}
+                            {(cat.nodes || []).slice(0, 3).map((n, ni) => (
+                                <div key={ni} style={{ display: 'flex', gap: 4, paddingLeft: 4, alignItems: 'baseline', overflow: 'hidden' }}>
+                                    <span style={{ color: color, fontSize: 11, lineHeight: '15px', flexShrink: 0 }}>–</span>
+                                    <span style={{ fontSize: 9.5, fontFamily: HF, color: '#2a2a2a', lineHeight: 1.4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                                        <strong style={{ color }}>{n.label}</strong>
+                                        {n.sublabel && <span style={{ color: '#777', fontWeight: 400 }}>: {n.sublabel}</span>}
+                                    </span>
                                 </div>
-                            );
-                        })}
-                    </div>
-                ))}
-            </div>
-            <div style={{ textAlign: 'center', paddingBottom: 4, paddingLeft: 54, position: 'relative', zIndex: 2 }}>
+                            ))}
+                        </div>
+                    );
+                }}
+            />
+            <div style={{ textAlign: 'center', paddingBottom: 4, paddingLeft: 52, position: 'relative', zIndex: 2, flexShrink: 0 }}>
                 <span style={{ fontSize: 9, color: '#bbb', fontFamily: HF }}>makepost.pro • Handwritten Notes</span>
             </div>
         </div>
     );
 }
 
-// ── Notebook Variant 1: Graph / Grid Paper ────────────────────────────────────
+// ── Notebook Variant 1: Graph / Grid Paper ─────────────────────────────────────
 function HWGraphPaper({ infographic, title, HF }) {
     const categories  = infographic?.categories || [];
     const infTitle    = infographic?.title || title;
     const infSubtitle = infographic?.subtitle || '';
-    const left  = categories.slice(0, 5);
-    const right = categories.slice(5, 10);
     return (
-        <div style={{ fontFamily: HF, height: '100%', display: 'flex', flexDirection: 'column', background: '#f8f8ff', backgroundImage: 'linear-gradient(#dde8ff 1px, transparent 1px), linear-gradient(90deg, #dde8ff 1px, transparent 1px)', backgroundSize: '20px 20px', border: '1px solid #c0c8e8', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ padding: '10px 14px 6px', flexShrink: 0, background: 'rgba(255,255,255,0.75)', borderBottom: '2.5px solid #334' }}>
-                <div style={{ fontSize: 22, fontWeight: 700, color: '#111', fontFamily: HF, textAlign: 'center', letterSpacing: 0.5 }}>{infTitle}</div>
-                {infSubtitle && <div style={{ fontSize: 11, color: '#888', fontFamily: HF, fontStyle: 'italic', textAlign: 'center', marginTop: 2 }}>{infSubtitle}</div>}
+        <div style={{ fontFamily: HF, height: '100%', display: 'flex', flexDirection: 'column', background: '#f4f8ff', backgroundImage: 'linear-gradient(#d0dcf4 1px, transparent 1px), linear-gradient(90deg, #d0dcf4 1px, transparent 1px)', backgroundSize: '22px 22px', border: '2px solid #8090cc', borderRadius: 4, overflow: 'hidden' }}>
+            {/* Header */}
+            <div style={{ padding: '9px 14px 6px', flexShrink: 0, background: 'rgba(255,255,255,0.85)', borderBottom: '2.5px solid #223' }}>
+                <div style={{ fontSize: 21, fontWeight: 700, color: '#111', fontFamily: HF, textAlign: 'center', letterSpacing: 0.5, lineHeight: 1.2 }}>{infTitle}</div>
+                {infSubtitle && <div style={{ fontSize: 10, color: '#667', fontFamily: HF, fontStyle: 'italic', textAlign: 'center', marginTop: 2 }}>{infSubtitle}</div>}
             </div>
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '6px 14px 4px', gap: '0 14px', overflow: 'hidden' }}>
-                {[left, right].map((col, ci) => (
-                    <div key={ci} style={{ display: 'flex', flexDirection: 'column' }}>
-                        {col.map((cat, i) => {
-                            const idx = ci === 0 ? i : i + 5;
-                            const color = cat.color || '#3344aa';
-                            return (
-                                <div key={i} style={{ flex: 1, minHeight: 0, paddingTop: 3, borderLeft: `3px solid ${color}`, paddingLeft: 7, marginBottom: 3 }}>
-                                    <div style={{ fontSize: 11, fontWeight: 700, color, fontFamily: HF, marginBottom: 1, lineHeight: 1.3 }}>
-                                        {cat.icon} {cat.label}
-                                    </div>
-                                    {(cat.nodes || []).slice(0, 3).map((n, ni) => (
-                                        <div key={ni} style={{ display: 'flex', gap: 3, alignItems: 'flex-start' }}>
-                                            <span style={{ color, fontSize: 11, lineHeight: '17px', flexShrink: 0 }}>◦</span>
-                                            <span style={{ fontSize: 10, fontFamily: HF, color: '#222', lineHeight: 1.55 }}>
-                                                <strong>{n.label}</strong>
-                                                {n.sublabel && <span style={{ color: '#666', fontSize: 9 }}>: {n.sublabel}</span>}
-                                            </span>
-                                        </div>
-                                    ))}
+            {/* Grid */}
+            <HWCategoryGrid
+                categories={categories}
+                gridStyle={{ padding: '4px 10px 4px', gap: '4px 8px' }}
+                renderCell={(cat, i) => {
+                    const color = cat.color || '#3344bb';
+                    return (
+                        <div key={i} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', borderLeft: `3px solid ${color}`, paddingLeft: 7, background: `${color}06` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+                                <span style={{ fontSize: 12, flexShrink: 0 }}>{cat.icon || '🔷'}</span>
+                                <span style={{ fontSize: 11, fontWeight: 700, color, fontFamily: HF, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {cat.label}
+                                </span>
+                            </div>
+                            {(cat.nodes || []).slice(0, 3).map((n, ni) => (
+                                <div key={ni} style={{ display: 'flex', gap: 3, paddingLeft: 2, alignItems: 'baseline', overflow: 'hidden' }}>
+                                    <span style={{ color, fontSize: 10, lineHeight: '15px', flexShrink: 0 }}>◦</span>
+                                    <span style={{ fontSize: 9.5, fontFamily: HF, color: '#222', lineHeight: 1.4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                                        <strong>{n.label}</strong>
+                                        {n.sublabel && <span style={{ color: '#557', fontSize: 9 }}>: {n.sublabel}</span>}
+                                    </span>
                                 </div>
-                            );
-                        })}
-                    </div>
-                ))}
-            </div>
-            <div style={{ textAlign: 'center', paddingBottom: 5, background: 'rgba(255,255,255,0.6)' }}>
-                <span style={{ fontSize: 9, color: '#aab', fontFamily: HF }}>makepost.pro • Handwritten Notes</span>
+                            ))}
+                        </div>
+                    );
+                }}
+            />
+            <div style={{ textAlign: 'center', paddingBottom: 4, flexShrink: 0, background: 'rgba(255,255,255,0.7)' }}>
+                <span style={{ fontSize: 9, color: '#99a', fontFamily: HF }}>makepost.pro • Handwritten Notes</span>
             </div>
         </div>
     );
 }
 
-// ── Notebook Variant 2: Yellow Legal Pad ─────────────────────────────────────
+// ── Notebook Variant 2: Yellow Legal Pad ──────────────────────────────────────
 function HWLegalPad({ infographic, title, HF }) {
     const categories  = infographic?.categories || [];
     const infTitle    = infographic?.title || title;
     const infSubtitle = infographic?.subtitle || '';
-    const left  = categories.slice(0, 5);
-    const right = categories.slice(5, 10);
     return (
-        <div style={{ fontFamily: HF, height: '100%', display: 'flex', flexDirection: 'column', background: '#fefce2', backgroundImage: 'repeating-linear-gradient(transparent, transparent 23px, #e0d060 23px, #e0d060 24px)', border: '1px solid #c0a830', borderRadius: 2, overflow: 'hidden', position: 'relative' }}>
-            {/* Red top horizontal rule */}
-            <div style={{ position: 'absolute', top: 50, left: 0, right: 0, height: 1.5, background: '#e88080', zIndex: 1 }} />
-            <div style={{ padding: '10px 14px 6px', flexShrink: 0, position: 'relative', zIndex: 2, textAlign: 'center' }}>
-                <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', fontFamily: HF, letterSpacing: 0.5 }}>{infTitle}</div>
-                {infSubtitle && <div style={{ fontSize: 11, color: '#887730', fontFamily: HF, fontStyle: 'italic', marginTop: 1 }}>{infSubtitle}</div>}
+        <div style={{ fontFamily: HF, height: '100%', display: 'flex', flexDirection: 'column', background: '#fdfbd0', backgroundImage: 'repeating-linear-gradient(transparent, transparent 23px, #d8c840 23px, #d8c840 24px)', border: '2px solid #b8a020', borderRadius: 2, overflow: 'hidden', position: 'relative' }}>
+            {/* Left pink binding strip */}
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 6, background: 'linear-gradient(to right,#e8b0b0,#fddede)', zIndex: 1 }} />
+            {/* Pink rule below title */}
+            <div style={{ position: 'absolute', top: 52, left: 6, right: 0, height: 1.5, background: '#e88880', zIndex: 1 }} />
+            {/* Title */}
+            <div style={{ paddingLeft: 18, paddingRight: 12, paddingTop: 8, paddingBottom: 4, flexShrink: 0, position: 'relative', zIndex: 2, textAlign: 'center' }}>
+                <div style={{ fontSize: 21, fontWeight: 700, color: '#1a1a1a', fontFamily: HF, letterSpacing: 0.5, lineHeight: 1.2 }}>{infTitle}</div>
+                {infSubtitle && <div style={{ fontSize: 10, color: '#887730', fontFamily: HF, fontStyle: 'italic', marginTop: 1 }}>{infSubtitle}</div>}
             </div>
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '4px 14px 4px', gap: '0 16px', overflow: 'hidden', position: 'relative', zIndex: 2 }}>
-                {[left, right].map((col, ci) => (
-                    <div key={ci} style={{ display: 'flex', flexDirection: 'column' }}>
-                        {col.map((cat, i) => {
-                            const color = cat.color || '#7a4010';
-                            return (
-                                <div key={i} style={{ flex: 1, minHeight: 0, paddingTop: 2 }}>
-                                    <div style={{ fontSize: 11, fontWeight: 700, color, fontFamily: HF, lineHeight: 1.3, marginBottom: 1 }}>
-                                        {cat.icon} {cat.label}
-                                    </div>
-                                    {(cat.nodes || []).slice(0, 3).map((n, ni) => (
-                                        <div key={ni} style={{ display: 'flex', gap: 4, paddingLeft: 6, alignItems: 'flex-start' }}>
-                                            <span style={{ color: '#888', fontSize: 12, lineHeight: '17px', flexShrink: 0 }}>•</span>
-                                            <span style={{ fontSize: 10, fontFamily: HF, color: '#1a1a1a', lineHeight: 1.55 }}>
-                                                <strong>{n.label}</strong>
-                                                {n.sublabel && <span style={{ color: '#666', fontSize: 9 }}>: {n.sublabel}</span>}
-                                            </span>
-                                        </div>
-                                    ))}
+            {/* Grid */}
+            <HWCategoryGrid
+                categories={categories}
+                gridStyle={{ paddingLeft: 14, paddingRight: 10, paddingBottom: 4, gap: '3px 10px', position: 'relative', zIndex: 2 }}
+                renderCell={(cat, i) => {
+                    const color = cat.color || '#8B4513';
+                    return (
+                        <div key={i} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', borderBottom: `1px dashed ${color}40`, padding: '3px 2px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+                                <span style={{ fontSize: 12, flexShrink: 0 }}>{cat.icon || '✏️'}</span>
+                                <span style={{ fontSize: 11, fontWeight: 700, color, fontFamily: HF, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'underline', textDecorationColor: `${color}60`, textUnderlineOffset: 2 }}>
+                                    {cat.label}
+                                </span>
+                            </div>
+                            {(cat.nodes || []).slice(0, 3).map((n, ni) => (
+                                <div key={ni} style={{ display: 'flex', gap: 4, paddingLeft: 4, alignItems: 'baseline', overflow: 'hidden' }}>
+                                    <span style={{ color: '#b06030', fontSize: 12, lineHeight: '15px', flexShrink: 0 }}>•</span>
+                                    <span style={{ fontSize: 9.5, fontFamily: HF, color: '#1a1a1a', lineHeight: 1.4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                                        <strong style={{ color }}>{n.label}</strong>
+                                        {n.sublabel && <span style={{ color: '#776620', fontWeight: 400 }}>: {n.sublabel}</span>}
+                                    </span>
                                 </div>
-                            );
-                        })}
-                    </div>
-                ))}
-            </div>
-            <div style={{ textAlign: 'center', paddingBottom: 5, position: 'relative', zIndex: 2 }}>
-                <span style={{ fontSize: 9, color: '#b0a040', fontFamily: HF }}>makepost.pro • Handwritten Notes</span>
+                            ))}
+                        </div>
+                    );
+                }}
+            />
+            <div style={{ textAlign: 'center', paddingBottom: 4, position: 'relative', zIndex: 2, flexShrink: 0 }}>
+                <span style={{ fontSize: 9, color: '#a09030', fontFamily: HF }}>makepost.pro • Handwritten Notes</span>
             </div>
         </div>
     );
 }
 
-// ── Notebook Variant 3: Dark Moleskine ───────────────────────────────────────
+// ── Notebook Variant 3: Dark Moleskine ────────────────────────────────────────
 function HWMoleskine({ infographic, title, HF }) {
     const categories  = infographic?.categories || [];
     const infTitle    = infographic?.title || title;
     const infSubtitle = infographic?.subtitle || '';
-    const left  = categories.slice(0, 5);
-    const right = categories.slice(5, 10);
     return (
-        <div style={{ fontFamily: HF, height: '100%', display: 'flex', flexDirection: 'column', background: '#1a1a2e', backgroundImage: 'repeating-linear-gradient(transparent, transparent 24px, #22223a 24px, #22223a 25px)', border: '1px solid #333', borderRadius: 4, overflow: 'hidden' }}>
-            <div style={{ padding: '10px 16px 8px', flexShrink: 0, borderBottom: '1px solid #3a3a5a' }}>
-                <div style={{ fontSize: 21, fontWeight: 700, color: '#f0e8d0', fontFamily: HF, textAlign: 'center', letterSpacing: 1 }}>{infTitle}</div>
-                <div style={{ width: '80%', height: 1, background: '#c8b870', margin: '5px auto 0', borderRadius: 1 }} />
-                {infSubtitle && <div style={{ fontSize: 10, color: '#9090a8', fontFamily: HF, fontStyle: 'italic', textAlign: 'center', marginTop: 3 }}>{infSubtitle}</div>}
+        <div style={{ fontFamily: HF, height: '100%', display: 'flex', flexDirection: 'column', background: '#12121e', backgroundImage: 'repeating-linear-gradient(transparent, transparent 24px, #1c1c2e 24px, #1c1c2e 25px)', border: '1px solid #3a3a5a', borderRadius: 5, overflow: 'hidden' }}>
+            {/* Header */}
+            <div style={{ padding: '9px 16px 7px', flexShrink: 0, background: 'linear-gradient(135deg,#1a1a30,#252545)', borderBottom: '1.5px solid #3a3a6a' }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#f0e8c8', fontFamily: HF, textAlign: 'center', letterSpacing: 1, lineHeight: 1.2 }}>{infTitle}</div>
+                <div style={{ width: '70%', height: 1, background: 'linear-gradient(to right,transparent,#c8b060,transparent)', margin: '5px auto 0', borderRadius: 1 }} />
+                {infSubtitle && <div style={{ fontSize: 9.5, color: '#8080a0', fontFamily: HF, fontStyle: 'italic', textAlign: 'center', marginTop: 3 }}>{infSubtitle}</div>}
             </div>
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '6px 14px 4px', gap: '0 14px', overflow: 'hidden' }}>
-                {[left, right].map((col, ci) => (
-                    <div key={ci} style={{ display: 'flex', flexDirection: 'column' }}>
-                        {col.map((cat, i) => {
-                            const color = cat.color || '#80a0ff';
-                            return (
-                                <div key={i} style={{ flex: 1, minHeight: 0, paddingTop: 2 }}>
-                                    <div style={{ fontSize: 11, fontWeight: 700, color, fontFamily: HF, lineHeight: 1.3, marginBottom: 1 }}>
-                                        {cat.icon} {cat.label}
-                                    </div>
-                                    {(cat.nodes || []).slice(0, 3).map((n, ni) => (
-                                        <div key={ni} style={{ display: 'flex', gap: 3, paddingLeft: 6, alignItems: 'flex-start' }}>
-                                            <span style={{ color: '#505070', fontSize: 12, lineHeight: '17px', flexShrink: 0 }}>—</span>
-                                            <span style={{ fontSize: 10, fontFamily: HF, color: '#c8c8e0', lineHeight: 1.55 }}>
-                                                <strong style={{ color: '#e8e0f0' }}>{n.label}</strong>
-                                                {n.sublabel && <span style={{ color: '#7070a0', fontSize: 9 }}>: {n.sublabel}</span>}
-                                            </span>
-                                        </div>
-                                    ))}
+            {/* Grid */}
+            <HWCategoryGrid
+                categories={categories}
+                gridStyle={{ padding: '4px 12px 4px', gap: '3px 10px' }}
+                renderCell={(cat, i) => {
+                    const color = cat.color || '#8090ff';
+                    return (
+                        <div key={i} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', borderLeft: `2.5px solid ${color}`, paddingLeft: 7, borderBottom: `1px solid ${color}20` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+                                <span style={{ fontSize: 12, flexShrink: 0 }}>{cat.icon || '★'}</span>
+                                <span style={{ fontSize: 10.5, fontWeight: 700, color, fontFamily: HF, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textShadow: `0 0 8px ${color}50` }}>
+                                    {cat.label}
+                                </span>
+                            </div>
+                            {(cat.nodes || []).slice(0, 3).map((n, ni) => (
+                                <div key={ni} style={{ display: 'flex', gap: 3, paddingLeft: 2, alignItems: 'baseline', overflow: 'hidden' }}>
+                                    <span style={{ color: `${color}80`, fontSize: 11, lineHeight: '15px', flexShrink: 0 }}>—</span>
+                                    <span style={{ fontSize: 9.5, fontFamily: HF, color: '#c0c0d8', lineHeight: 1.4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                                        <strong style={{ color: '#e0d8f0' }}>{n.label}</strong>
+                                        {n.sublabel && <span style={{ color: '#6868a0', fontWeight: 400 }}>: {n.sublabel}</span>}
+                                    </span>
                                 </div>
-                            );
-                        })}
-                    </div>
-                ))}
-            </div>
-            <div style={{ textAlign: 'center', paddingBottom: 5 }}>
-                <span style={{ fontSize: 9, color: '#505068', fontFamily: HF }}>makepost.pro • Handwritten Notes</span>
+                            ))}
+                        </div>
+                    );
+                }}
+            />
+            <div style={{ textAlign: 'center', paddingBottom: 4, flexShrink: 0 }}>
+                <span style={{ fontSize: 9, color: '#404060', fontFamily: HF }}>makepost.pro • Handwritten Notes</span>
             </div>
         </div>
     );
@@ -469,14 +528,6 @@ function HWMoleskine({ infographic, title, HF }) {
 
 // ── HandwrittenRenderer: randomly picks one of the 4 notebook styles ──────────
 function HandwrittenRenderer({ infographic, title }) {
-    React.useEffect(() => {
-        if (!document.getElementById('caveat-gfont')) {
-            const l = document.createElement('link');
-            l.id = 'caveat-gfont'; l.rel = 'stylesheet';
-            l.href = 'https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap';
-            document.head.appendChild(l);
-        }
-    }, []);
     const HF = "'Caveat','Segoe Print','Comic Sans MS',cursive";
     const [variant] = React.useState(() => Math.floor(Math.random() * 4));
     if (variant === 1) return <HWGraphPaper infographic={infographic} title={title} HF={HF} />;
