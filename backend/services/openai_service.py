@@ -237,11 +237,14 @@ QUALITY RULES:
                 {"role": "user", "content": prompt}
             ],
             response_format={"type": "json_object"},
-            max_tokens=1800,   # actual output ~1400-1600 tokens; 4000 was wasteful
+            max_tokens=4000,   # 10 categories × 5-6 nodes with sublabels needs ~3000-3500 tokens
             temperature=0.7,
             top_p=0.9,
         )
 
+        finish_reason = completion.choices[0].finish_reason
+        if finish_reason == "length":
+            print(f"[OpenAI] Response truncated (finish_reason=length). Increase max_tokens further.")
         content = json.loads(completion.choices[0].message.content)
 
         # Generate Pillow image in background thread — don't block the API response
