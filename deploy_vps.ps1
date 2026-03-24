@@ -1,4 +1,4 @@
-$server = "root@72.61.244.88"
+$server = "root@191.101.2.4"
 $sshArgs = "-o StrictHostKeyChecking=no"
 
 Write-Host "Cleaning up old frontend build on server..."

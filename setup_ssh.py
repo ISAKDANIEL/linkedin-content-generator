@@ -1,9 +1,9 @@
 import paramiko
 import os
 
-hostname = "72.61.244.88"
+hostname = "191.101.2.4"
 username = "root"
-password = "Thiru@24032000"
+password = "Manoj@121295"
 key_file = os.path.expanduser("~/.ssh/id_rsa.pub")
 
 with open(key_file, "r") as f:
