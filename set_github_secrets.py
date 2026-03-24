@@ -13,7 +13,7 @@ REPO = "ISAKDANIEL/linkedin-content-generator"
 SECRETS = {
     "VPS_HOST": "191.101.2.4",
     "VPS_USER": "root",
-    "VPS_SSH_KEY": open("C:/Users/Rukshana/.ssh/id_rsa").read().strip(),
+    "VPS_SSH_KEY": open("C:/Users/Rukshana/.ssh/deploy_key").read().strip() if __import__('os').path.exists("C:/Users/Rukshana/.ssh/deploy_key") else open("C:/Users/Rukshana/.ssh/id_rsa").read().strip(),
 }
 
 def encrypt_secret(public_key_b64: str, secret: str) -> str:

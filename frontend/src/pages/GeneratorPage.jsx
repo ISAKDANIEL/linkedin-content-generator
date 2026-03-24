@@ -46,494 +46,438 @@ async function downloadInfographic(ref, title) {
 // ── Visual Infographic Renderer (style-aware) ──────────────────────────────────
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   WHITEBOARD SKETCH
-   Layout: Alternating zigzag flow — big circle number LEFT then RIGHT, flowing
-   down the page with dashed connector lines between rows.
+   SHARED: TieredGuide — Executive's Guide 3-column tiered layout
+   Left: use cases + needs  |  Center: colored cylinder  |  Right: risks + insight
 ══════════════════════════════════════════════════════════════════════════════ */
-/* ══════════════════════════════════════════════════════════════════════════════
-   WHITEBOARD SKETCH — Vertical roadmap with milestone circles on a timeline
-   Left: thick colored circles with icons connected by a vertical line
-   Right: content cards with colored accent borders and 2-column bullet grids
-══════════════════════════════════════════════════════════════════════════════ */
-function WhiteboardRenderer({ infographic, title }) {
-    const categories = infographic?.categories || [];
-    const infTitle = infographic?.title || title;
-    const infSubtitle = infographic?.subtitle || '';
-
+function TieredGuide({ tiers, title, theme }) {
+    const T = theme;
     return (
-        <div style={{ fontFamily: "'Arial Black',Arial,sans-serif", background: '#fff', border: '4px solid #111', borderRadius: 10, overflow: 'hidden', boxShadow: '7px 7px 0 #111', height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {/* Header */}
-            <div style={{ background: '#111', padding: '12px 22px 10px', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-                <div style={{ position: 'absolute', top: -30, right: -20, width: 120, height: 120, background: (categories[0]?.color || '#e53e3e'), borderRadius: '50%', opacity: 0.18 }} />
-                <div style={{ fontSize: 9, color: '#94a3b8', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 3 }}>📋 WHITEBOARD SKETCH</div>
-                <h2 style={{ fontSize: 18, fontWeight: 900, color: '#fff', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: 1.5, lineHeight: 1.2 }}>{infTitle}</h2>
-                {infSubtitle && (
-                    <div style={{ display: 'inline-block', background: (categories[0]?.color || '#e53e3e') + '33', border: `1px solid ${categories[0]?.color || '#e53e3e'}66`, borderRadius: 4, padding: '2px 10px', marginTop: 2 }}>
-                        <span style={{ fontSize: 9, color: '#e2e8f0', fontWeight: 600, letterSpacing: 0.5 }}>{infSubtitle}</span>
+        <div style={{ background: T.bg, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: T.fontFamily || "'Segoe UI',system-ui,sans-serif", overflow: 'hidden', boxSizing: 'border-box' }}>
+
+            {/* ── HEADER ── */}
+            <div style={{ background: T.headerBg, padding: '14px 18px 12px', flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: -25, right: -25, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+                <div style={{ position: 'absolute', bottom: -15, left: 20, width: 70, height: 70, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+                <div style={{ textAlign: 'center', position: 'relative' }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: T.headerSubColor, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 7 }}>THE COMPLETE GUIDE TO</div>
+                    <div style={{ display: 'inline-block', background: T.headerAccent, borderRadius: 8, padding: '5px 22px', marginBottom: 4, boxShadow: `0 4px 16px ${T.headerAccent}60` }}>
+                        <span style={{ fontSize: 21, fontWeight: 900, color: '#fff', letterSpacing: 1.5, textTransform: 'uppercase', textShadow: '0 2px 4px rgba(0,0,0,0.25)' }}>{title}</span>
                     </div>
-                )}
+                </div>
+                {/* Bottom accent line */}
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: T.headerAccent }} />
             </div>
 
-            {/* Timeline body — flex:1 fills remaining height */}
-            <div style={{ flex: 1, padding: '8px 12px 6px', background: '#fafafa', position: 'relative', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', left: 32, top: 20, bottom: 20, width: 3, background: 'linear-gradient(to bottom, #11111120, #11111140, #11111120)', borderRadius: 2 }} />
-                {categories.map((cat, ci) => {
-                    const color = cat.color || ['#e53e3e','#dd6b20','#2b6cb0','#276749','#6b46c1','#c05621','#2c7a7b','#97266d','#744210','#1a365d'][ci % 10];
-                    const nodes = (cat.nodes || []).slice(0, 3);
+            {/* ── COLUMN HEADERS ── */}
+            <div style={{ background: T.colHdrBg, display: 'flex', alignItems: 'center', padding: '4px 8px', flexShrink: 0 }}>
+                <div style={{ flex: 1, textAlign: 'center', fontSize: 7, fontWeight: 800, color: T.colHdrColor, letterSpacing: 1.5, textTransform: 'uppercase' }}>USE CASES &amp; WHAT IT NEEDS</div>
+                <div style={{ width: '26%' }} />
+                <div style={{ flex: 1, textAlign: 'center', fontSize: 7, fontWeight: 800, color: T.colHdrColor, letterSpacing: 1.5, textTransform: 'uppercase' }}>KEY RISKS &amp; INSIGHTS</div>
+            </div>
+
+            {/* ── TIER ROWS ── */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, padding: '4px 8px 4px', minHeight: 0 }}>
+                {tiers.map((tier, i) => {
+                    const color = tier.color || ['#E53E3E','#DD6B20','#D69E2E','#38A169','#3182CE'][i % 5];
                     return (
-                        <motion.div key={ci}
-                            initial={{ opacity: 0, x: -30 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: ci * 0.06, type: 'spring', stiffness: 200, damping: 20 }}
-                            style={{ display: 'flex', gap: 10, flex: 1, minHeight: 0, alignItems: 'stretch', position: 'relative', zIndex: 1, marginBottom: ci < categories.length - 1 ? 4 : 0 }}
+                        <motion.div key={i}
+                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.07, type: 'spring', stiffness: 180, damping: 22 }}
+                            style={{ flex: 1, display: 'flex', gap: 5, minHeight: 0 }}
                         >
-                            {/* Circle milestone */}
-                            <div style={{
-                                width: 36, height: 36, borderRadius: '50%', background: color, alignSelf: 'center',
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                flexShrink: 0, border: '2px solid #fff', boxShadow: `0 3px 10px ${color}50`,
-                            }}>
-                                <div style={{ fontSize: 12 }}>{cat.icon || '●'}</div>
-                            </div>
-                            {/* Content card */}
-                            <div style={{ flex: 1, background: '#fff', border: `1.5px solid ${color}25`, borderLeft: `3px solid ${color}`, borderRadius: '0 6px 6px 0', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                                <div style={{ background: `${color}14`, padding: '3px 10px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: `1px solid ${color}18`, flexShrink: 0 }}>
-                                    <span style={{ fontSize: 10, fontWeight: 900, color, textTransform: 'uppercase', letterSpacing: 0.8 }}>{cat.label}</span>
-                                    <div style={{ fontSize: 9, background: color, color: '#fff', borderRadius: 10, padding: '1px 6px', fontWeight: 700, marginLeft: 'auto' }}>{ci + 1}</div>
-                                </div>
-                                <div style={{ padding: '4px 10px 5px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
-                                    {nodes.map((node, ni) => (
-                                        <div key={ni} style={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
-                                            <span style={{ color, fontWeight: 900, fontSize: 11, lineHeight: '14px', flexShrink: 0 }}>▸</span>
-                                            <div style={{ fontSize: 10, lineHeight: 1.3 }}>
-                                                <span style={{ fontWeight: 700, color: '#1a1a1a' }}>{node.label}</span>
-                                                {node.sublabel && <span style={{ color: '#64748b', fontSize: 9 }}>{' — '}{node.sublabel}</span>}
-                                            </div>
+                            {/* Left panel */}
+                            <div style={{ flex: 1, background: T.panelBg, borderRadius: 6, padding: '5px 8px', border: T.panelBorder, borderTop: `3px solid ${color}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 2, minWidth: 0 }}>
+                                {(tier.use_cases || []).length > 0 && <>
+                                    <div style={{ fontSize: 6.5, fontWeight: 800, color, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 1, flexShrink: 0 }}>Use Cases</div>
+                                    {(tier.use_cases || []).slice(0, 2).map((uc, j) => (
+                                        <div key={j} style={{ fontSize: 8, color: T.bodyText, lineHeight: 1.3, display: 'flex', gap: 3, flexShrink: 0 }}>
+                                            <span style={{ color, flexShrink: 0, fontWeight: 700, fontSize: 9, lineHeight: '12px' }}>→</span>
+                                            <span style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{uc}</span>
                                         </div>
                                     ))}
-                                </div>
-                            </div>
-                        </motion.div>
-                    );
-                })}
-            </div>
-            <div style={{ background: '#111', padding: '5px', textAlign: 'center', flexShrink: 0 }}>
-                <span style={{ fontSize: 9, color: '#94a3b8', letterSpacing: 1.5 }}>makepost.pro • Whiteboard Sketch</span>
-            </div>
-        </div>
-    );
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   CORPORATE MODERN — Premium business dashboard with deep gradient header,
-   bold icon circles, colored left-accent bars, and 2-column bullet grids.
-══════════════════════════════════════════════════════════════════════════════ */
-function CorporateRenderer({ infographic, title }) {
-    const categories = infographic?.categories || [];
-    const infTitle = infographic?.title || title;
-    const infSubtitle = infographic?.subtitle || '';
-    // Compact mode: many categories → smaller chrome, labels-only nodes so everything fits
-    const compact = categories.length >= 7;
-
-    return (
-        <div style={{ fontFamily: "'Segoe UI',system-ui,sans-serif", background: '#f8faff', borderRadius: 16, overflow: 'hidden', border: '1px solid #e0e7ff', boxShadow: '0 16px 48px rgba(30,58,138,0.14)', height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {/* Gradient header */}
-            <div style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e3a8a 50%,#1d4ed8 100%)', padding: compact ? '8px 16px 7px' : '14px 20px 12px', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-                <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
-                <div style={{ fontSize: 8, color: '#93c5fd', fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: compact ? 3 : 5, position: 'relative' }}>💼 CORPORATE MODERN</div>
-                <h2 style={{ fontSize: compact ? 15 : 18, fontWeight: 800, color: '#fff', margin: compact ? '0 0 2px' : '0 0 4px', lineHeight: 1.2, position: 'relative' }}>{infTitle}</h2>
-                {!compact && infSubtitle && <p style={{ fontSize: 10, color: '#93c5fd', margin: 0, position: 'relative', fontStyle: 'italic' }}>{infSubtitle}</p>}
-                {compact && infSubtitle && <p style={{ fontSize: 8, color: '#93c5fd', margin: 0, position: 'relative', fontStyle: 'italic', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{infSubtitle}</p>}
-                <div style={{ display: 'flex', gap: 3, marginTop: compact ? 5 : 8, position: 'relative' }}>
-                    {categories.slice(0, 10).map((_, i) => (
-                        <motion.div key={i} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: i * 0.05, duration: 0.3 }}
-                            style={{ height: 3, flex: 1, background: i < 3 ? '#60a5fa' : i < 6 ? '#93c5fd' : '#bfdbfe', borderRadius: 2, transformOrigin: 'left' }} />
-                    ))}
-                </div>
-            </div>
-
-            {/* Rows — each row is flex:1 of remaining height */}
-            <div style={{ flex: 1, background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                {categories.map((cat, ci) => {
-                    const color = cat.color || '#1d4ed8';
-                    const nodes = (cat.nodes || []).slice(0, 3);
-                    return (
-                        <motion.div key={ci}
-                            initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: ci * 0.04 }}
-                            style={{
-                                display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden',
-                                alignItems: 'stretch',
-                                borderBottom: ci < categories.length - 1 ? '1px solid #f0f4ff' : 'none',
-                                background: ci % 2 === 0 ? '#fff' : '#fafcff',
-                            }}
-                        >
-                            {/* Left accent bar */}
-                            <div style={{ width: 4, flexShrink: 0, background: `linear-gradient(to bottom, ${color}, ${color}60)` }} />
-
-                            {/* Icon */}
-                            <div style={{ width: compact ? 34 : 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <div style={{ width: compact ? 22 : 30, height: compact ? 22 : 30, borderRadius: '50%', background: `${color}18`, border: `2px solid ${color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <span style={{ fontSize: compact ? 9 : 13 }}>{cat.icon || '●'}</span>
-                                </div>
-                            </div>
-
-                            {/* Category label */}
-                            <div style={{ width: compact ? 66 : 90, flexShrink: 0, display: 'flex', alignItems: 'center', padding: compact ? '2px 4px 2px 0' : '4px 6px 4px 0', borderRight: `1px solid ${color}18` }}>
-                                <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                                    <div style={{
-                                        fontSize: compact ? 7.5 : 10, fontWeight: 800, color,
-                                        textTransform: 'uppercase', letterSpacing: 0.3, lineHeight: 1.25,
-                                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                                        overflow: 'hidden',
-                                    }}>{cat.label}</div>
-                                    <div style={{ fontSize: 7, color: '#94a3b8', marginTop: 1 }}>{ci + 1}/{categories.length}</div>
-                                </div>
-                            </div>
-
-                            {/* Bullet nodes */}
-                            <div style={{ flex: 1, minWidth: 0, padding: compact ? '0 8px' : '4px 10px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: compact ? 1 : 2, overflow: 'hidden' }}>
-                                {nodes.map((node, ni) => (
-                                    <div key={ni} style={{ display: 'flex', gap: 4, alignItems: 'center', overflow: 'hidden', minHeight: 0 }}>
-                                        <div style={{ width: compact ? 4 : 5, height: compact ? 4 : 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                                        <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
-                                            <span style={{
-                                                fontWeight: 700, color: '#1e293b',
-                                                fontSize: compact ? 9 : 10, lineHeight: 1.25,
-                                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                                display: 'block',
-                                            }}>{node.label}</span>
-                                            {!compact && node.sublabel && (
-                                                <span style={{
-                                                    color: '#64748b', fontSize: 8, lineHeight: 1.2,
-                                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                                    display: 'block',
-                                                }}>{' — '}{node.sublabel}</span>
-                                            )}
+                                </>}
+                                {(tier.what_needs || []).length > 0 && <>
+                                    <div style={{ fontSize: 6.5, fontWeight: 800, color, letterSpacing: 0.6, textTransform: 'uppercase', marginTop: 3, marginBottom: 1, flexShrink: 0 }}>What It Needs</div>
+                                    {(tier.what_needs || []).slice(0, 2).map((wn, j) => (
+                                        <div key={j} style={{ fontSize: 8, color: T.bodyText, lineHeight: 1.3, display: 'flex', gap: 3, flexShrink: 0 }}>
+                                            <span style={{ color, flexShrink: 0, fontWeight: 700, fontSize: 9, lineHeight: '12px' }}>→</span>
+                                            <span style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{wn}</span>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </>}
+                            </div>
+
+                            {/* Center cylinder */}
+                            <div style={{
+                                width: '26%', background: color, borderRadius: 12,
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                padding: '6px 5px', overflow: 'hidden', flexShrink: 0,
+                                boxShadow: `0 4px 16px ${color}50, inset 0 -3px 8px rgba(0,0,0,0.18), inset 0 3px 8px rgba(255,255,255,0.18)`,
+                                position: 'relative',
+                            }}>
+                                <div style={{ position: 'absolute', top: 0, left: '10%', right: '10%', height: 8, background: 'rgba(255,255,255,0.22)', borderRadius: '0 0 50% 50%' }} />
+                                <div style={{ fontSize: 11, fontWeight: 900, color: '#fff', textAlign: 'center', lineHeight: 1.2, textShadow: '0 2px 4px rgba(0,0,0,0.3)', position: 'relative', padding: '0 2px' }}>{tier.name}</div>
+                                {tier.tagline && (
+                                    <div style={{ fontSize: 7.5, color: 'rgba(255,255,255,0.88)', textAlign: 'center', marginTop: 3, lineHeight: 1.25, fontStyle: 'italic', position: 'relative', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{tier.tagline}</div>
+                                )}
+                            </div>
+
+                            {/* Right panel */}
+                            <div style={{ flex: 1, background: T.panelBg, borderRadius: 6, padding: '5px 8px', border: T.panelBorder, borderTop: `3px solid ${color}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 2, minWidth: 0 }}>
+                                {(tier.key_risks || []).length > 0 && <>
+                                    <div style={{ fontSize: 6.5, fontWeight: 800, color, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 1, flexShrink: 0 }}>Key Risks</div>
+                                    {(tier.key_risks || []).slice(0, 2).map((kr, j) => (
+                                        <div key={j} style={{ fontSize: 8, color: T.bodyText, lineHeight: 1.3, display: 'flex', gap: 3, flexShrink: 0 }}>
+                                            <span style={{ color, flexShrink: 0, fontWeight: 700, fontSize: 9, lineHeight: '12px' }}>→</span>
+                                            <span style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{kr}</span>
+                                        </div>
+                                    ))}
+                                </>}
+                                {tier.insight && (
+                                    <div style={{ fontSize: 7.5, color: T.insightColor, fontStyle: 'italic', marginTop: 3, lineHeight: 1.3, borderTop: `1px solid ${color}25`, paddingTop: 3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{tier.insight}</div>
+                                )}
                             </div>
                         </motion.div>
                     );
                 })}
             </div>
 
-            <div style={{ background: 'linear-gradient(90deg,#0f172a,#1e3a8a)', padding: '5px', textAlign: 'center', flexShrink: 0 }}>
-                <span style={{ fontSize: 9, color: '#93c5fd', letterSpacing: 1.5 }}>makepost.pro • Corporate Modern</span>
+            {/* ── FOOTER ── */}
+            <div style={{ background: T.footerBg, padding: '5px', textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 8.5, color: T.footerText, letterSpacing: 1.5 }}>makepost.pro  •  AI-Generated LinkedIn Infographic</span>
             </div>
         </div>
     );
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   EXECUTIVE GUIDE — Dark terminal aesthetic with neon glows, giant numbers,
-   and syntax-highlight colored section headers on #0d1117 background.
+   SHARED: CategoryGrid — 2-column card grid fallback when no tiers data
 ══════════════════════════════════════════════════════════════════════════════ */
-function ExecutiveRenderer({ infographic, title }) {
-    const categories = infographic?.categories || [];
-    const infTitle = infographic?.title || title;
-    const infSubtitle = infographic?.subtitle || '';
-    const GLOWS = ['#58a6ff','#3fb950','#f78166','#d2a8ff','#ffa657','#79c0ff','#56d364','#ff7b72','#cae8ff','#ffdcd7'];
-
+function CategoryGrid({ categories, title, theme }) {
+    const T = theme;
+    const pairs = [];
+    for (let i = 0; i < Math.min(categories.length, 10); i += 2) {
+        pairs.push([categories[i], categories[i + 1]].filter(Boolean));
+    }
     return (
-        <div style={{ fontFamily: "'Consolas','Courier New',monospace", background: '#0d1117', borderRadius: 12, overflow: 'hidden', border: '1px solid #30363d', boxShadow: '0 0 0 1px #21262d, 0 24px 64px rgba(0,0,0,0.8)', height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {/* Terminal title bar */}
-            <div style={{ background: '#161b22', padding: '8px 16px', borderBottom: '1px solid #21262d', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                <div style={{ display: 'flex', gap: 5 }}>
-                    {['#ff5f56','#ffbd2e','#27c93f'].map((c, i) => (
-                        <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: c }} />
-                    ))}
+        <div style={{ background: T.bg, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: T.fontFamily || "'Segoe UI',system-ui,sans-serif", overflow: 'hidden', boxSizing: 'border-box' }}>
+            <div style={{ background: T.headerBg, padding: '14px 18px 12px', flexShrink: 0, textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.headerSubColor, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 7 }}>THE COMPLETE GUIDE TO</div>
+                <div style={{ display: 'inline-block', background: T.headerAccent, borderRadius: 8, padding: '5px 22px', boxShadow: `0 4px 16px ${T.headerAccent}60` }}>
+                    <span style={{ fontSize: 21, fontWeight: 900, color: '#fff', letterSpacing: 1.5, textTransform: 'uppercase' }}>{title}</span>
                 </div>
-                <div style={{ flex: 1, textAlign: 'center' }}>
-                    <span style={{ fontSize: 10, color: '#8b949e' }}>executive-guide.md — {infTitle}</span>
-                </div>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: T.headerAccent }} />
             </div>
-
-            {/* Content header */}
-            <div style={{ background: '#0d1117', padding: '12px 20px 10px', borderBottom: '2px solid #21262d', flexShrink: 0 }}>
-                <div style={{ fontSize: 9, color: '#58a6ff', fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 4 }}>⚡ EXECUTIVE GUIDE</div>
-                <h2 style={{ fontSize: 17, fontWeight: 700, color: '#f0f6fc', margin: '0 0 3px', lineHeight: 1.25 }}>{infTitle}</h2>
-                {infSubtitle && <p style={{ fontSize: 10, color: '#8b949e', margin: 0, fontFamily: 'sans-serif' }}>{infSubtitle}</p>}
-            </div>
-
-            {/* Entries — flex:1, each entry flex:1 */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                {categories.map((cat, ci) => {
-                    const glow = cat.color || GLOWS[ci % GLOWS.length];
-                    const nodes = (cat.nodes || []).slice(0, 3);
-                    return (
-                        <motion.div key={ci}
-                            initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: ci * 0.05 }}
-                            style={{ flex: 1, minHeight: 0, borderBottom: '1px solid #21262d', padding: '5px 14px', background: ci % 2 === 0 ? '#0d1117' : '#0a0f16', display: 'flex', alignItems: 'center' }}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
-                                <div style={{ width: 36, flexShrink: 0 }}>
-                                    <div style={{ fontSize: 22, fontWeight: 900, color: glow, lineHeight: 1, textShadow: `0 0 14px ${glow}80` }}>
-                                        {String(ci + 1).padStart(2, '0')}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4, padding: '5px 10px 4px', minHeight: 0 }}>
+                {pairs.map((pair, pi) => (
+                    <div key={pi} style={{ flex: 1, display: 'flex', gap: 5, minHeight: 0 }}>
+                        {pair.map((cat, ci) => {
+                            const color = cat.color || '#E53E3E';
+                            return (
+                                <motion.div key={ci}
+                                    initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: (pi * 2 + ci) * 0.05 }}
+                                    style={{ flex: 1, background: T.panelBg, borderRadius: 8, border: T.panelBorder, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}
+                                >
+                                    <div style={{ background: color, padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, boxShadow: `0 2px 8px ${color}40` }}>
+                                        <span style={{ fontSize: 14, lineHeight: 1, flexShrink: 0 }}>{resolveIcon(cat.icon, pi * 2 + ci)}</span>
+                                        <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: 0.3, flex: 1, overflow: 'hidden', lineHeight: 1.2 }}>{cat.label}</span>
+                                        <span style={{ fontSize: 8, background: 'rgba(0,0,0,0.2)', color: '#fff', borderRadius: 4, padding: '1px 5px', fontWeight: 700, flexShrink: 0 }}>{pi * 2 + ci + 1}</span>
                                     </div>
-                                    <div style={{ fontSize: 13, marginTop: 1 }}>{cat.icon || '▸'}</div>
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                                        <span style={{ fontSize: 11, fontWeight: 700, color: glow, textTransform: 'uppercase', letterSpacing: 1, textShadow: `0 0 6px ${glow}40` }}>{cat.label}</span>
-                                        <div style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${glow}40, transparent)` }} />
-                                    </div>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                                        {nodes.map((node, ni) => (
-                                            <div key={ni} style={{ background: `${glow}10`, border: `1px solid ${glow}35`, borderRadius: 4, padding: '2px 7px' }}>
-                                                <span style={{ color: '#c9d1d9', fontWeight: 600, fontSize: 9, fontFamily: 'sans-serif' }}>{node.label}</span>
+                                    <div style={{ flex: 1, padding: '5px 9px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 3, overflow: 'hidden' }}>
+                                        {(cat.nodes || []).slice(0, 3).map((n, ni) => (
+                                            <div key={ni} style={{ display: 'flex', gap: 5, alignItems: 'flex-start', overflow: 'hidden' }}>
+                                                <span style={{ color, fontWeight: 900, fontSize: 11, lineHeight: '13px', flexShrink: 0 }}>›</span>
+                                                <div style={{ minWidth: 0 }}>
+                                                    <span style={{ fontSize: 8.5, fontWeight: 700, color: T.bodyText, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.3 }}>{n.label}</span>
+                                                    {n.sublabel && <span style={{ fontSize: 7.5, color: T.insightColor, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.3 }}>{n.sublabel}</span>}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
-                                </div>
-                            </div>
-                        </motion.div>
-                    );
-                })}
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                ))}
             </div>
-            <div style={{ background: '#010409', padding: '5px', textAlign: 'center', borderTop: '1px solid #21262d', flexShrink: 0 }}>
-                <span style={{ fontSize: 9, color: '#484f58', letterSpacing: 1.5 }}>makepost.pro • Executive Guide</span>
+            <div style={{ background: T.footerBg, padding: '5px', textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 8.5, color: T.footerText, letterSpacing: 1.5 }}>makepost.pro  •  AI-Generated LinkedIn Infographic</span>
             </div>
         </div>
     );
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   HANDWRITTEN NOTES — Reference-exact sketchnote
-   Layout mirrors the "What is an AI Agent?" whiteboard image:
-   ┌─────────────────────────────────────────────────────┐
-   │  TITLE (bold, ALL CAPS, thick underline)            │
-   │  ┌─── [SUBTITLE in blue box] ────────────────────┐  │
-   │  │   hub-and-spoke, 6 white boxes, dashed arrows  │  │
-   │  └────────────────────────────────────────────────┘  │
-   │  ┌──[green: TYPES]──┐  ┌──[3 colored rows]──────┐   │
-   │  │  bullet list     │  │  ██ Label + icon        │   │
-   │  │                  │  │  ██ Label + icon        │   │
-   │  └──────────────────┘  │  ██ Label + icon        │   │
-   │                        └────────────────────────-┘   │
-   └─────────────────────────────────────────────────────┘
+   WHITEBOARD SKETCH — Grid paper bg, bold marker title, 2-col colored section cards
 ══════════════════════════════════════════════════════════════════════════════ */
-// ── Shared HW grid helper — maps categories onto a CSS grid (2 cols × N rows)
-// Each cell gets an equal fraction of height; overflow:hidden prevents bleed.
-function HWCategoryGrid({ categories, renderCell, gridStyle = {} }) {
-    const rows = Math.ceil(categories.length / 2);
+// Fallback emojis for each category index (0-based)
+const CAT_ICONS = ['🧱','⚙️','🔄','✅','🚀','🛠️','📊','💡','⚠️','🔮'];
+// Detect if a string is actually an emoji (has non-ASCII / emoji codepoint)
+const resolveIcon = (raw, idx) => {
+    if (!raw) return CAT_ICONS[idx % CAT_ICONS.length];
+    // If it's only ASCII letters/spaces (e.g. "emoji", "icon", "symbol"), use default
+    if (/^[\x00-\x7F\s]+$/.test(raw.trim())) return CAT_ICONS[idx % CAT_ICONS.length];
+    return raw;
+};
+
+function WhiteboardRenderer({ infographic, title }) {
+    const categories = infographic?.categories || [];
+    const tiers = infographic?.tiers || [];
+    const items = categories.length > 0 ? categories : tiers.map(t => ({
+        label: t.name, icon: '📌', color: t.color,
+        nodes: [
+            ...(t.use_cases || []).slice(0, 1).map(s => ({ label: s })),
+            ...(t.what_needs || []).slice(0, 1).map(s => ({ label: s })),
+            ...(t.key_risks || []).slice(0, 1).map(s => ({ label: s })),
+        ],
+    }));
+    const pairs = [];
+    for (let i = 0; i < Math.min(items.length, 10); i += 2) pairs.push([items[i], items[i + 1]].filter(Boolean));
+    const COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f59e0b','#6366f1'];
     return (
-        <div style={{
-            flex: 1, display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gridTemplateRows: `repeat(${rows}, 1fr)`,
-            overflow: 'hidden',
-            ...gridStyle,
-        }}>
-            {categories.map((cat, i) => renderCell(cat, i))}
+        <div style={{ background: '#ffffff', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI',system-ui,sans-serif", overflow: 'hidden', position: 'relative', boxSizing: 'border-box' }}>
+            {/* Grid paper texture */}
+            <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px),linear-gradient(90deg,#e5e7eb 1px,transparent 1px)', backgroundSize: '22px 22px', opacity: 0.35, pointerEvents: 'none' }} />
+            {/* Header — no absolute children, use border-bottom as underline anchor */}
+            <div style={{ padding: '12px 18px 14px', flexShrink: 0, position: 'relative', textAlign: 'center' }}>
+                <div style={{ fontSize: 7.5, fontWeight: 700, color: '#9ca3af', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>WHITEBOARD SESSION</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: '#111827', textTransform: 'uppercase', letterSpacing: 1, lineHeight: 1.2 }}>
+                    {title}
+                </div>
+                {/* Red marker underline — below the title text, inside header padding */}
+                <div style={{ width: '60%', maxWidth: 220, height: 4, background: '#ef4444', borderRadius: 2, margin: '6px auto 0', transform: 'rotate(-0.4deg)' }} />
+            </div>
+            {/* Hairline separator */}
+            <div style={{ height: 2, background: '#111827', flexShrink: 0 }} />
+            {/* Card grid */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4, padding: '8px 10px 4px', minHeight: 0, position: 'relative' }}>
+                {pairs.map((pair, pi) => (
+                    <div key={pi} style={{ flex: 1, display: 'flex', gap: 5, minHeight: 0 }}>
+                        {pair.map((cat, ci) => {
+                            const color = cat.color || COLORS[(pi * 2 + ci) % COLORS.length];
+                            return (
+                                <motion.div key={ci}
+                                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: (pi * 2 + ci) * 0.05 }}
+                                    style={{ flex: 1, background: '#fff', borderRadius: 6, border: `2px solid ${color}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0, boxShadow: `3px 3px 0 ${color}30` }}
+                                >
+                                    <div style={{ background: color, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                                        <span style={{ fontSize: 13, lineHeight: 1, flexShrink: 0 }}>{resolveIcon(cat.icon, pi * 2 + ci)}</span>
+                                        <span style={{ fontSize: 8.5, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: 0.3, flex: 1, overflow: 'hidden', lineHeight: 1.2 }}>{cat.label}</span>
+                                        <span style={{ fontSize: 7.5, fontWeight: 800, color: 'rgba(255,255,255,0.8)', flexShrink: 0, background: 'rgba(0,0,0,0.18)', borderRadius: 4, padding: '1px 5px' }}>{pi * 2 + ci + 1}</span>
+                                    </div>
+                                    <div style={{ flex: 1, padding: '4px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2.5, overflow: 'hidden' }}>
+                                        {(cat.nodes || []).slice(0, 3).map((n, ni) => (
+                                            <div key={ni} style={{ display: 'flex', gap: 5, alignItems: 'flex-start' }}>
+                                                <span style={{ color, fontWeight: 900, fontSize: 10, lineHeight: '13px', flexShrink: 0 }}>✓</span>
+                                                <div style={{ minWidth: 0 }}>
+                                                    <span style={{ fontSize: 8.5, fontWeight: 700, color: '#1f2937', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.3 }}>{n.label}</span>
+                                                    {n.sublabel && <span style={{ fontSize: 7, color: '#6b7280', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.3 }}>{n.sublabel}</span>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                ))}
+            </div>
+            <div style={{ padding: '5px', textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 8, color: '#9ca3af', letterSpacing: 1.5 }}>makepost.pro  •  AI-Generated LinkedIn Infographic</span>
+            </div>
         </div>
     );
 }
 
-// ── Notebook Variant 0: Classic Ruled Paper (cream + blue lines + red margin) ─
-function HWRuledPaper({ infographic, title, HF }) {
-    const categories  = infographic?.categories || [];
-    const infTitle    = infographic?.title || title;
-    const infSubtitle = infographic?.subtitle || '';
+/* ══════════════════════════════════════════════════════════════════════════════
+   CORPORATE MODERN — Dark tech poster, glowing title, neon tier badges
+══════════════════════════════════════════════════════════════════════════════ */
+function CorporateRenderer({ infographic, title }) {
+    const tiers = infographic?.tiers || [];
+    const categories = infographic?.categories || [];
+    const items = tiers.length > 0 ? tiers : categories.map(c => ({
+        name: c.label, color: c.color, tagline: c.nodes?.[0]?.sublabel || '',
+        use_cases: (c.nodes || []).slice(0, 2).map(n => n.label),
+        what_needs: [],
+        key_risks: (c.nodes || []).slice(2, 4).map(n => n.label),
+        insight: '',
+    }));
+    // Shared horizontal padding and center column width — must match between header and rows
+    const SIDE_PAD = 10;
+    const CTR_W = 90;
     return (
-        <div style={{ fontFamily: HF, height: '100%', display: 'flex', flexDirection: 'column', background: '#fefdf5', backgroundImage: 'repeating-linear-gradient(transparent, transparent 24px, #c8d8f0 24px, #c8d8f0 25px)', border: '1px solid #c8bca0', borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
-            {/* Red margin line */}
-            <div style={{ position: 'absolute', left: 40, top: 0, bottom: 0, width: 1.5, background: '#e8a0a0', zIndex: 1, pointerEvents: 'none' }} />
-            {/* Title */}
-            <div style={{ paddingLeft: 52, paddingRight: 12, paddingTop: 8, paddingBottom: 4, flexShrink: 0, position: 'relative', zIndex: 2 }}>
-                <div style={{ fontSize: 21, fontWeight: 700, color: '#111', fontFamily: HF, letterSpacing: 0.5, lineHeight: 1.2 }}>{infTitle}</div>
-                <div style={{ width: '90%', height: 2.5, background: 'linear-gradient(to right,#222,#888)', margin: '3px 0 2px', borderRadius: 1 }} />
-                {infSubtitle && <div style={{ fontSize: 10, color: '#888', fontFamily: HF, fontStyle: 'italic' }}>{infSubtitle}</div>}
+        <div style={{ background: '#070c14', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI',system-ui,sans-serif", overflow: 'hidden', color: '#e2e8f0', boxSizing: 'border-box', position: 'relative' }}>
+            {/* Glowing header */}
+            <div style={{ padding: '14px 20px 10px', flexShrink: 0, textAlign: 'center', position: 'relative', borderBottom: '1px solid rgba(56,189,248,0.2)' }}>
+                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '70%', height: '100%', background: 'radial-gradient(ellipse,rgba(56,189,248,0.09) 0%,transparent 70%)', pointerEvents: 'none' }} />
+                <div style={{ fontSize: 7.5, fontWeight: 700, color: '#38bdf8', letterSpacing: 4, textTransform: 'uppercase', marginBottom: 5 }}>CORPORATE INTELLIGENCE BRIEF</div>
+                <div style={{ fontSize: 21, fontWeight: 900, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: 2, textShadow: '0 0 28px rgba(56,189,248,0.55),0 0 55px rgba(56,189,248,0.2)' }}>{title}</div>
+                <div style={{ width: 60, height: 2, background: 'linear-gradient(90deg,transparent,#38bdf8,transparent)', margin: '7px auto 0' }} />
             </div>
-            {/* Grid */}
-            <HWCategoryGrid
-                categories={categories}
-                gridStyle={{ paddingLeft: 52, paddingRight: 10, paddingBottom: 4, gap: '2px 10px', position: 'relative', zIndex: 2 }}
-                renderCell={(cat, i) => {
-                    const color = cat.color || '#1d6fb8';
+            {/* Column headers — padding matches tier rows exactly */}
+            <div style={{ display: 'grid', gridTemplateColumns: `1fr ${CTR_W}px 1fr`, gap: 4, padding: `4px ${SIDE_PAD}px 2px`, flexShrink: 0 }}>
+                <div style={{ textAlign: 'center', fontSize: 7, fontWeight: 800, color: '#f97316', letterSpacing: 2, textTransform: 'uppercase' }}>▶ APPLICATIONS</div>
+                <div />
+                <div style={{ textAlign: 'center', fontSize: 7, fontWeight: 800, color: '#22d3ee', letterSpacing: 2, textTransform: 'uppercase' }}>CRITICAL RISKS ◀</div>
+            </div>
+            {/* Tier rows */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, padding: `3px ${SIDE_PAD}px 4px`, minHeight: 0 }}>
+                {items.map((tier, i) => {
+                    const color = tier.color || ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6'][i % 5];
                     return (
-                        <div key={i} style={{ overflow: 'hidden', padding: '4px 2px 2px', borderBottom: `1.5px solid ${color}30`, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                            {/* Category header */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-                                <span style={{ fontSize: 13, flexShrink: 0 }}>{cat.icon || '📌'}</span>
-                                <span style={{ fontSize: 11, fontWeight: 700, color, fontFamily: HF, textDecoration: 'underline', textDecorationColor: `${color}80`, textUnderlineOffset: 2, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {i + 1}. {cat.label}
-                                </span>
+                        <motion.div key={i}
+                            initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.07 }}
+                            style={{ flex: 1, display: 'grid', gridTemplateColumns: `1fr ${CTR_W}px 1fr`, gap: 4, minHeight: 0 }}
+                        >
+                            {/* Left – Applications */}
+                            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(249,115,22,0.2)', borderLeft: `2px solid #f97316`, borderRadius: 4, padding: '4px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2, overflow: 'hidden', minWidth: 0 }}>
+                                {(tier.use_cases || []).slice(0, 2).map((uc, j) => (
+                                    <div key={j} style={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
+                                        <span style={{ color: '#f97316', fontWeight: 700, fontSize: 9, flexShrink: 0, lineHeight: '13px' }}>▸</span>
+                                        <span style={{ fontSize: 8, color: '#cbd5e1', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{uc}</span>
+                                    </div>
+                                ))}
+                                {(tier.what_needs || []).slice(0, 1).map((wn, j) => (
+                                    <div key={j} style={{ display: 'flex', gap: 4, alignItems: 'flex-start', marginTop: 1 }}>
+                                        <span style={{ color: '#94a3b8', fontSize: 9, flexShrink: 0, lineHeight: '13px' }}>◦</span>
+                                        <span style={{ fontSize: 7.5, color: '#94a3b8', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{wn}</span>
+                                    </div>
+                                ))}
                             </div>
-                            {/* Nodes */}
-                            {(cat.nodes || []).slice(0, 3).map((n, ni) => (
-                                <div key={ni} style={{ display: 'flex', gap: 4, paddingLeft: 4, alignItems: 'baseline', overflow: 'hidden' }}>
-                                    <span style={{ color: color, fontSize: 11, lineHeight: '15px', flexShrink: 0 }}>–</span>
-                                    <span style={{ fontSize: 9.5, fontFamily: HF, color: '#2a2a2a', lineHeight: 1.4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                                        <strong style={{ color }}>{n.label}</strong>
-                                        {n.sublabel && <span style={{ color: '#777', fontWeight: 400 }}>: {n.sublabel}</span>}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
+                            {/* Center – Neon badge */}
+                            <div style={{ background: `linear-gradient(135deg,${color}20,${color}40)`, border: `1px solid ${color}55`, borderRadius: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4px 3px', boxShadow: `0 0 14px ${color}30,inset 0 0 12px rgba(0,0,0,0.3)` }}>
+                                <div style={{ width: 7, height: 7, borderRadius: '50%', background: color, boxShadow: `0 0 8px ${color}`, marginBottom: 3 }} />
+                                <div style={{ fontSize: 9, fontWeight: 900, color: '#fff', textAlign: 'center', lineHeight: 1.2, textShadow: `0 0 8px ${color}` }}>{tier.name}</div>
+                                {tier.tagline && <div style={{ fontSize: 6.5, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginTop: 2, lineHeight: 1.2 }}>{tier.tagline}</div>}
+                            </div>
+                            {/* Right – Risks */}
+                            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(34,211,238,0.2)', borderRight: `2px solid #22d3ee`, borderRadius: 4, padding: '4px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2, overflow: 'hidden', minWidth: 0 }}>
+                                {(tier.key_risks || []).slice(0, 2).map((kr, j) => (
+                                    <div key={j} style={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
+                                        <span style={{ color: '#22d3ee', fontWeight: 700, fontSize: 9, flexShrink: 0, lineHeight: '13px' }}>▸</span>
+                                        <span style={{ fontSize: 8, color: '#cbd5e1', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{kr}</span>
+                                    </div>
+                                ))}
+                                {tier.insight && (
+                                    <div style={{ fontSize: 7, color: '#64748b', fontStyle: 'italic', marginTop: 2, lineHeight: 1.3, borderTop: '1px solid rgba(100,116,139,0.3)', paddingTop: 2 }}>{tier.insight}</div>
+                                )}
+                            </div>
+                        </motion.div>
                     );
-                }}
-            />
-            <div style={{ textAlign: 'center', paddingBottom: 4, paddingLeft: 52, position: 'relative', zIndex: 2, flexShrink: 0 }}>
-                <span style={{ fontSize: 9, color: '#bbb', fontFamily: HF }}>makepost.pro • Handwritten Notes</span>
+                })}
+            </div>
+            <div style={{ padding: '5px', textAlign: 'center', flexShrink: 0, borderTop: '1px solid rgba(56,189,248,0.15)' }}>
+                <span style={{ fontSize: 8, color: '#475569', letterSpacing: 1.5 }}>makepost.pro  •  CORPORATE INTELLIGENCE SERIES</span>
             </div>
         </div>
     );
 }
 
-// ── Notebook Variant 1: Graph / Grid Paper ─────────────────────────────────────
-function HWGraphPaper({ infographic, title, HF }) {
-    const categories  = infographic?.categories || [];
-    const infTitle    = infographic?.title || title;
-    const infSubtitle = infographic?.subtitle || '';
-    return (
-        <div style={{ fontFamily: HF, height: '100%', display: 'flex', flexDirection: 'column', background: '#f4f8ff', backgroundImage: 'linear-gradient(#d0dcf4 1px, transparent 1px), linear-gradient(90deg, #d0dcf4 1px, transparent 1px)', backgroundSize: '22px 22px', border: '2px solid #8090cc', borderRadius: 4, overflow: 'hidden' }}>
-            {/* Header */}
-            <div style={{ padding: '9px 14px 6px', flexShrink: 0, background: 'rgba(255,255,255,0.85)', borderBottom: '2.5px solid #223' }}>
-                <div style={{ fontSize: 21, fontWeight: 700, color: '#111', fontFamily: HF, textAlign: 'center', letterSpacing: 0.5, lineHeight: 1.2 }}>{infTitle}</div>
-                {infSubtitle && <div style={{ fontSize: 10, color: '#667', fontFamily: HF, fontStyle: 'italic', textAlign: 'center', marginTop: 2 }}>{infSubtitle}</div>}
-            </div>
-            {/* Grid */}
-            <HWCategoryGrid
-                categories={categories}
-                gridStyle={{ padding: '4px 10px 4px', gap: '4px 8px' }}
-                renderCell={(cat, i) => {
-                    const color = cat.color || '#3344bb';
-                    return (
-                        <div key={i} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', borderLeft: `3px solid ${color}`, paddingLeft: 7, background: `${color}06` }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-                                <span style={{ fontSize: 12, flexShrink: 0 }}>{cat.icon || '🔷'}</span>
-                                <span style={{ fontSize: 11, fontWeight: 700, color, fontFamily: HF, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {cat.label}
-                                </span>
-                            </div>
-                            {(cat.nodes || []).slice(0, 3).map((n, ni) => (
-                                <div key={ni} style={{ display: 'flex', gap: 3, paddingLeft: 2, alignItems: 'baseline', overflow: 'hidden' }}>
-                                    <span style={{ color, fontSize: 10, lineHeight: '15px', flexShrink: 0 }}>◦</span>
-                                    <span style={{ fontSize: 9.5, fontFamily: HF, color: '#222', lineHeight: 1.4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                                        <strong>{n.label}</strong>
-                                        {n.sublabel && <span style={{ color: '#557', fontSize: 9 }}>: {n.sublabel}</span>}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    );
-                }}
-            />
-            <div style={{ textAlign: 'center', paddingBottom: 4, flexShrink: 0, background: 'rgba(255,255,255,0.7)' }}>
-                <span style={{ fontSize: 9, color: '#99a', fontFamily: HF }}>makepost.pro • Handwritten Notes</span>
-            </div>
-        </div>
-    );
+/* ══════════════════════════════════════════════════════════════════════════════
+   EXECUTIVE GUIDE — Dark terminal theme, neon accents (tiered layout)
+══════════════════════════════════════════════════════════════════════════════ */
+function ExecutiveRenderer({ infographic, title }) {
+    const tiers = infographic?.tiers || [];
+    const categories = infographic?.categories || [];
+    const T = {
+        bg: '#0d1117', headerBg: '#010409', headerAccent: '#58a6ff',
+        headerSubColor: '#8b949e', colHdrBg: '#0a0f16', colHdrColor: '#8b949e',
+        panelBg: '#161b22', panelBorder: '1px solid #30363d',
+        bodyText: '#c9d1d9', insightColor: '#8b949e',
+        footerBg: '#010409', footerText: '#484f58',
+    };
+    if (tiers.length > 0) return <TieredGuide tiers={tiers} title={title} theme={T} />;
+    return <CategoryGrid categories={categories} title={title} theme={T} />;
 }
 
-// ── Notebook Variant 2: Yellow Legal Pad ──────────────────────────────────────
-function HWLegalPad({ infographic, title, HF }) {
-    const categories  = infographic?.categories || [];
-    const infTitle    = infographic?.title || title;
-    const infSubtitle = infographic?.subtitle || '';
-    return (
-        <div style={{ fontFamily: HF, height: '100%', display: 'flex', flexDirection: 'column', background: '#fdfbd0', backgroundImage: 'repeating-linear-gradient(transparent, transparent 23px, #d8c840 23px, #d8c840 24px)', border: '2px solid #b8a020', borderRadius: 2, overflow: 'hidden', position: 'relative' }}>
-            {/* Left pink binding strip */}
-            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 6, background: 'linear-gradient(to right,#e8b0b0,#fddede)', zIndex: 1 }} />
-            {/* Pink rule below title */}
-            <div style={{ position: 'absolute', top: 52, left: 6, right: 0, height: 1.5, background: '#e88880', zIndex: 1 }} />
-            {/* Title */}
-            <div style={{ paddingLeft: 18, paddingRight: 12, paddingTop: 8, paddingBottom: 4, flexShrink: 0, position: 'relative', zIndex: 2, textAlign: 'center' }}>
-                <div style={{ fontSize: 21, fontWeight: 700, color: '#1a1a1a', fontFamily: HF, letterSpacing: 0.5, lineHeight: 1.2 }}>{infTitle}</div>
-                {infSubtitle && <div style={{ fontSize: 10, color: '#887730', fontFamily: HF, fontStyle: 'italic', marginTop: 1 }}>{infSubtitle}</div>}
-            </div>
-            {/* Grid */}
-            <HWCategoryGrid
-                categories={categories}
-                gridStyle={{ paddingLeft: 14, paddingRight: 10, paddingBottom: 4, gap: '3px 10px', position: 'relative', zIndex: 2 }}
-                renderCell={(cat, i) => {
-                    const color = cat.color || '#8B4513';
-                    return (
-                        <div key={i} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', borderBottom: `1px dashed ${color}40`, padding: '3px 2px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-                                <span style={{ fontSize: 12, flexShrink: 0 }}>{cat.icon || '✏️'}</span>
-                                <span style={{ fontSize: 11, fontWeight: 700, color, fontFamily: HF, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'underline', textDecorationColor: `${color}60`, textUnderlineOffset: 2 }}>
-                                    {cat.label}
-                                </span>
-                            </div>
-                            {(cat.nodes || []).slice(0, 3).map((n, ni) => (
-                                <div key={ni} style={{ display: 'flex', gap: 4, paddingLeft: 4, alignItems: 'baseline', overflow: 'hidden' }}>
-                                    <span style={{ color: '#b06030', fontSize: 12, lineHeight: '15px', flexShrink: 0 }}>•</span>
-                                    <span style={{ fontSize: 9.5, fontFamily: HF, color: '#1a1a1a', lineHeight: 1.4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                                        <strong style={{ color }}>{n.label}</strong>
-                                        {n.sublabel && <span style={{ color: '#776620', fontWeight: 400 }}>: {n.sublabel}</span>}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    );
-                }}
-            />
-            <div style={{ textAlign: 'center', paddingBottom: 4, position: 'relative', zIndex: 2, flexShrink: 0 }}>
-                <span style={{ fontSize: 9, color: '#a09030', fontFamily: HF }}>makepost.pro • Handwritten Notes</span>
-            </div>
-        </div>
-    );
-}
-
-// ── Notebook Variant 3: Dark Moleskine ────────────────────────────────────────
-function HWMoleskine({ infographic, title, HF }) {
-    const categories  = infographic?.categories || [];
-    const infTitle    = infographic?.title || title;
-    const infSubtitle = infographic?.subtitle || '';
-    return (
-        <div style={{ fontFamily: HF, height: '100%', display: 'flex', flexDirection: 'column', background: '#12121e', backgroundImage: 'repeating-linear-gradient(transparent, transparent 24px, #1c1c2e 24px, #1c1c2e 25px)', border: '1px solid #3a3a5a', borderRadius: 5, overflow: 'hidden' }}>
-            {/* Header */}
-            <div style={{ padding: '9px 16px 7px', flexShrink: 0, background: 'linear-gradient(135deg,#1a1a30,#252545)', borderBottom: '1.5px solid #3a3a6a' }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#f0e8c8', fontFamily: HF, textAlign: 'center', letterSpacing: 1, lineHeight: 1.2 }}>{infTitle}</div>
-                <div style={{ width: '70%', height: 1, background: 'linear-gradient(to right,transparent,#c8b060,transparent)', margin: '5px auto 0', borderRadius: 1 }} />
-                {infSubtitle && <div style={{ fontSize: 9.5, color: '#8080a0', fontFamily: HF, fontStyle: 'italic', textAlign: 'center', marginTop: 3 }}>{infSubtitle}</div>}
-            </div>
-            {/* Grid */}
-            <HWCategoryGrid
-                categories={categories}
-                gridStyle={{ padding: '4px 12px 4px', gap: '3px 10px' }}
-                renderCell={(cat, i) => {
-                    const color = cat.color || '#8090ff';
-                    return (
-                        <div key={i} style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', borderLeft: `2.5px solid ${color}`, paddingLeft: 7, borderBottom: `1px solid ${color}20` }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-                                <span style={{ fontSize: 12, flexShrink: 0 }}>{cat.icon || '★'}</span>
-                                <span style={{ fontSize: 10.5, fontWeight: 700, color, fontFamily: HF, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textShadow: `0 0 8px ${color}50` }}>
-                                    {cat.label}
-                                </span>
-                            </div>
-                            {(cat.nodes || []).slice(0, 3).map((n, ni) => (
-                                <div key={ni} style={{ display: 'flex', gap: 3, paddingLeft: 2, alignItems: 'baseline', overflow: 'hidden' }}>
-                                    <span style={{ color: `${color}80`, fontSize: 11, lineHeight: '15px', flexShrink: 0 }}>—</span>
-                                    <span style={{ fontSize: 9.5, fontFamily: HF, color: '#c0c0d8', lineHeight: 1.4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                                        <strong style={{ color: '#e0d8f0' }}>{n.label}</strong>
-                                        {n.sublabel && <span style={{ color: '#6868a0', fontWeight: 400 }}>: {n.sublabel}</span>}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    );
-                }}
-            />
-            <div style={{ textAlign: 'center', paddingBottom: 4, flexShrink: 0 }}>
-                <span style={{ fontSize: 9, color: '#404060', fontFamily: HF }}>makepost.pro • Handwritten Notes</span>
-            </div>
-        </div>
-    );
-}
-
-// ── HandwrittenRenderer: randomly picks one of the 4 notebook styles ──────────
+/* ══════════════════════════════════════════════════════════════════════════════
+   HANDWRITTEN NOTES — Lined paper, numbered study cards, margin notes
+══════════════════════════════════════════════════════════════════════════════ */
 function HandwrittenRenderer({ infographic, title }) {
-    const HF = "'Caveat','Segoe Print','Comic Sans MS',cursive";
-    const [variant] = React.useState(() => Math.floor(Math.random() * 4));
-    if (variant === 1) return <HWGraphPaper infographic={infographic} title={title} HF={HF} />;
-    if (variant === 2) return <HWLegalPad   infographic={infographic} title={title} HF={HF} />;
-    if (variant === 3) return <HWMoleskine  infographic={infographic} title={title} HF={HF} />;
-    return <HWRuledPaper infographic={infographic} title={title} HF={HF} />;
+    const tiers = infographic?.tiers || [];
+    const categories = infographic?.categories || [];
+    const items = tiers.length > 0 ? tiers : categories.slice(0, 5).map(c => ({
+        name: c.label, color: c.color, tagline: c.nodes?.[0]?.sublabel || '',
+        use_cases: (c.nodes || []).slice(0, 2).map(n => n.label),
+        what_needs: [],
+        key_risks: (c.nodes || []).slice(2, 3).map(n => n.label),
+        insight: c.nodes?.[3]?.label || '',
+    }));
+    const TABS = ['#e74c3c','#e67e22','#f1c40f','#2ecc71','#3498db'];
+    return (
+        <div style={{ background: '#fdf6e3', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Caveat','Segoe Print','Comic Sans MS',cursive", overflow: 'hidden', position: 'relative', boxSizing: 'border-box' }}>
+            {/* Lined paper */}
+            <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(transparent,transparent 27px,#d4c5a945 27px,#d4c5a945 28px)', pointerEvents: 'none' }} />
+            {/* Red margin line */}
+            <div style={{ position: 'absolute', top: 0, bottom: 0, left: 50, width: 1, background: '#e8a5a560', pointerEvents: 'none' }} />
+            {/* Header */}
+            <div style={{ padding: '12px 16px 8px 60px', flexShrink: 0, position: 'relative' }}>
+                <div style={{ fontSize: 7.5, fontWeight: 700, color: '#999', letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'system-ui', marginBottom: 2 }}>MY NOTES ON</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#2c1810', lineHeight: 1.1 }}>{title}</div>
+                <svg style={{ display: 'block', marginTop: 3 }} height="6" width="200" viewBox="0 0 200 6">
+                    <path d="M0,3 Q10,0 20,3 Q30,6 40,3 Q50,0 60,3 Q70,6 80,3 Q90,0 100,3 Q110,6 120,3 Q130,0 140,3 Q150,6 160,3 Q170,0 180,3 Q190,6 200,3" stroke="#e74c3c" strokeWidth="1.5" fill="none" />
+                </svg>
+                <div style={{ fontSize: 7.5, color: '#b0896a', marginTop: 3, fontFamily: 'system-ui' }}>makepost.pro study notes ✏️</div>
+            </div>
+            {/* Study cards */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, padding: '4px 10px 4px 60px', minHeight: 0 }}>
+                {items.slice(0, 5).map((tier, i) => {
+                    const tabColor = tier.color || TABS[i % 5];
+                    return (
+                        <motion.div key={i}
+                            initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.06, type: 'spring', stiffness: 200 }}
+                            style={{ flex: 1, background: '#fffef5', border: '1px solid #d4c5a9', borderLeft: `4px solid ${tabColor}`, borderRadius: '0 6px 6px 0', padding: '5px 8px', display: 'flex', gap: 6, alignItems: 'stretch', minHeight: 0, overflow: 'hidden', boxSizing: 'border-box', boxShadow: '1px 2px 5px rgba(0,0,0,0.06)' }}
+                        >
+                            {/* Number circle + tier name */}
+                            <div style={{ flexShrink: 0, textAlign: 'center', minWidth: 44, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: 28, height: 28, borderRadius: '50%', background: tabColor, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', boxShadow: `0 2px 6px ${tabColor}50` }}>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{i + 1}</span>
+                                </div>
+                                <div style={{ fontSize: 7.5, fontWeight: 700, color: tabColor, marginTop: 2, lineHeight: 1.1, maxWidth: 44, wordBreak: 'break-word' }}>{tier.name}</div>
+                            </div>
+                            {/* Divider */}
+                            <div style={{ width: 1, background: '#d4c5a9', flexShrink: 0, alignSelf: 'stretch' }} />
+                            {/* Middle content */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 3, overflow: 'hidden', minWidth: 0 }}>
+                                {tier.tagline && (
+                                    <div><span style={{ fontSize: 6.5, fontWeight: 800, color: '#b0896a', fontFamily: 'system-ui', textTransform: 'uppercase', letterSpacing: 0.5 }}>What it is: </span><span style={{ fontSize: 8, color: '#3d2810' }}>{tier.tagline}</span></div>
+                                )}
+                                {(tier.use_cases || []).slice(0, 1).map((uc, j) => (
+                                    <div key={j}><span style={{ fontSize: 6.5, fontWeight: 800, color: '#2e7d32', fontFamily: 'system-ui', textTransform: 'uppercase', letterSpacing: 0.5 }}>Best for: </span><span style={{ fontSize: 8, color: '#3d2810' }}>{uc}</span></div>
+                                ))}
+                                {(tier.what_needs || []).slice(0, 1).map((wn, j) => (
+                                    <div key={j}><span style={{ fontSize: 6.5, fontWeight: 800, color: '#1565c0', fontFamily: 'system-ui', textTransform: 'uppercase', letterSpacing: 0.5 }}>Needs: </span><span style={{ fontSize: 8, color: '#3d2810' }}>{wn}</span></div>
+                                ))}
+                            </div>
+                            {/* Right badges */}
+                            <div style={{ width: 88, flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 3 }}>
+                                {(tier.key_risks || []).slice(0, 1).map((kr, j) => (
+                                    <div key={j} style={{ background: '#fff3e0', border: '1px solid #ffcc80', borderRadius: 4, padding: '3px 6px' }}>
+                                        <span style={{ fontSize: 6.5, fontWeight: 800, color: '#e65100', fontFamily: 'system-ui', textTransform: 'uppercase', display: 'block' }}>⚠ Risk</span>
+                                        <span style={{ fontSize: 7.5, color: '#5d4037', lineHeight: 1.3, display: 'block' }}>{kr}</span>
+                                    </div>
+                                ))}
+                                {tier.insight && (
+                                    <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 4, padding: '3px 6px' }}>
+                                        <span style={{ fontSize: 6.5, fontWeight: 800, color: '#2e7d32', fontFamily: 'system-ui', textTransform: 'uppercase', display: 'block' }}>✓ Tip</span>
+                                        <span style={{ fontSize: 7.5, color: '#1b5e20', lineHeight: 1.3, display: 'block' }}>{tier.insight}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    );
+                })}
+            </div>
+            <div style={{ padding: '5px 60px', textAlign: 'right', flexShrink: 0, position: 'relative' }}>
+                <span style={{ fontSize: 7.5, color: '#b0896a', letterSpacing: 1 }}>makepost.pro  •  study notes series</span>
+            </div>
+        </div>
+    );
 }
 
 function InfographicRenderer({ content, title, style = 'Whiteboard' }) {
@@ -1028,7 +972,7 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                             <div style={{ textAlign: 'center' }}>
                                                 <div style={{ width: 70, height: 70, border: '5px solid #f8e6e6', borderTopColor: '#c54444', borderRadius: '50%', animation: 'spin 1.2s linear infinite', margin: '0 auto 24px' }} />
                                                 <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: '0 0 8px' }}>Generating your content...</h2>
-                                                <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>This is usually faster with our latest optimizations (~15-20s)</p>
+                                                <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>This is usually faster with our latest optimizations (~5-8s)</p>
                                             </div>
                                         ) : (
                                             <div style={{ textAlign: 'center', opacity: 0.55 }}>
