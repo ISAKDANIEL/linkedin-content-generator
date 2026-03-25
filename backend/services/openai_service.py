@@ -284,6 +284,43 @@ EXACTLY 10 CATEGORIES (use a relevant single emoji for each "icon" field — act
             print(f"[OpenAI] Response truncated (finish_reason=length). Increase max_tokens further.")
         content = json.loads(completion.choices[0].message.content)
 
+        # ── Strip all emojis from hook, body, cta (guaranteed clean text) ────────
+        if not is_handwritten:
+            import re as _re
+            _emoji_pattern = _re.compile(
+                "[\U00010000-\U0010ffff"
+                "\U0001F600-\U0001F64F"
+                "\U0001F300-\U0001F5FF"
+                "\U0001F680-\U0001F6FF"
+                "\U0001F1E0-\U0001F1FF"
+                "\U00002702-\U000027B0"
+                "\U000024C2-\U0001F251"
+                "]+", flags=_re.UNICODE
+            )
+            def _strip(text):
+                if not isinstance(text, str): return text
+                cleaned = _emoji_pattern.sub('', text).strip()
+                # Clean up leading bullet artifacts left after emoji removal
+                cleaned = _re.sub(r'^[\s\-–—•*]+', '', cleaned, flags=_re.MULTILINE)
+                return cleaned.strip()
+
+            # Re-number lines cleanly: strip emojis from each body line, re-prefix with "N. "
+            if content.get('body'):
+                lines = [l.strip() for l in content['body'].split('\n') if l.strip()]
+                clean_lines = []
+                num = 1
+                for line in lines:
+                    clean = _strip(line)
+                    if clean:
+                        # Remove any existing leading number like "1. " or "1) "
+                        clean = _re.sub(r'^\d+[\.\)]\s*', '', clean)
+                        clean_lines.append(f"{num}. {clean}")
+                        num += 1
+                content['body'] = '\n'.join(clean_lines)
+
+            content['hook'] = _strip(content.get('hook', ''))
+            content['cta']  = _strip(content.get('cta', ''))
+
         # Generate Pillow image in background thread — don't block the API response
         import threading
         def _render_bg():
