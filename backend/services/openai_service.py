@@ -190,43 +190,55 @@ EXACTLY 10 CATEGORIES (use a relevant single emoji for each "icon" field — act
             }[chosen_bullet]
 
             system_content = (
-                "You are a top LinkedIn ghostwriter who writes viral posts for C-suite executives and thought leaders. "
-                "Your posts get 100K+ impressions. You write with authority, precision, and NO emojis. "
-                "Style: clean, numbered bullet points (1. 2. 3. ...). Professional and direct. "
-                "RULES: Real numbers, specific facts, contrarian takes. Zero vague statements. "
-                "BANNED: emojis of any kind, 'unique solutions', 'game-changer', 'leverage', "
-                "'excited to share', 'let's discuss', 'in today's world', 'it's important', 'vital'. "
-                "Every bullet must contain a SPECIFIC insight — data point, mechanism, or lesson. "
+                "You are a senior LinkedIn ghostwriter for Fortune 500 executives, VCs, and industry analysts. "
+                "You write thought leadership posts that get shared in boardrooms, not just liked on feeds. "
+                "CRITICAL RULES — break any of these and the post is rejected: "
+                "1. ZERO emojis anywhere in hook, body, or CTA. "
+                "2. ZERO fabricated statistics. Never write a percentage, number, or study unless it is a well-known "
+                "   published fact (e.g. 'Python is the #1 language on Stack Overflow 2023'). "
+                "   If you don't know a real stat, use observation-based language instead: "
+                "   'Most teams...', 'The fastest engineers...', 'In every project I've seen...'. "
+                "3. ZERO corporate filler: no 'game-changer', 'leverage', 'synergy', 'excited to share', "
+                "   'in today's world', 'it's important to note', 'unique solutions', 'transformative'. "
+                "4. Write like a smart human — direct, opinionated, slightly contrarian. "
+                "5. Each point must be a genuine insight, observation, or mechanism — not a dressed-up platitude. "
                 "Return ONLY strictly valid JSON — no markdown, no code fences, no extra text. "
                 "Generate EXACTLY 5 tiers AND EXACTLY 10 categories. "
                 "Tiers: each has use_cases, what_needs, key_risks, insight — all items 5-8 words max. "
                 "Categories 1-6: 4 nodes each. Category 7: 4 nodes. Categories 8-10: 2 nodes each. "
                 "Node sublabels: 5-7 words. Category labels: 2-3 words max. Use vivid distinct hex colors."
             )
-            prompt = f"""Write a LinkedIn post about: "{title}"
+            prompt = f"""Write a professional LinkedIn post about: "{title}"
 Tone: {tone} | Audience: {audience or 'professionals'}
-Angle for this post: {chosen_angle}
+Angle: {chosen_angle}
 
 HOOK RULES:
-- Must be a bold statement, a surprising stat, or a short personal confession
-- NO questions as the hook. NO "Exploring..." or "Let's talk about..."
-- Good example: "Most engineers spend 80% of their time on the 20% that doesn't matter."
-- Good example: "I got this wrong for 4 years. Here's what changed everything:"
+- One bold sentence that earns the reader's attention immediately
+- Can be: a contrarian claim, a hard truth, a confession, a counter-narrative
+- NEVER a question. NEVER "Exploring..." or generic openings.
+- NEVER a made-up stat. Use real known facts or observation-based statements.
+- Good: "Nobody talks about why most {title} implementations quietly fail six months in."
+- Good: "I spent three years building with {title} before I understood what it was actually for."
+- Good: "The best {title} practitioners I know share one habit that most tutorials never mention."
 
 BODY RULES:
-- Exactly 7 points using this format: {bullet_format}
-- NO emojis anywhere. No mixing formats.
-- Every point must directly mention "{title}" concepts, names, tools, or facts
-- Each point must have a real number, statistic, or named mechanism
-- Bad: "It improves your workflow significantly."
-- Good: "Python's asyncio library handles 10,000+ concurrent connections vs Java's 1,000 thread limit."
+- Exactly 7 points using this exact format: {bullet_format}
+- NO emojis. NO fabricated numbers or fake percentages.
+- Each point = a real insight, mechanism, or observation about {title}
+- Use named concepts, known tools, real trade-offs, or genuine lessons
+- Write from a place of earned expertise, not AI-generated statistics
+- Bad: "It reduces bugs by 45%, verified across 50+ projects." ← FABRICATED, REJECTED
+- Bad: "Utilising NLP capabilities improves readability by 65%." ← FABRICATED, REJECTED
+- Good: "Most teams adopt {title} for the obvious use case and miss the one that saves the most time."
+- Good: "The failure mode nobody documents: {title} works perfectly in staging, breaks in production."
+- Good: "Senior engineers use {title} differently than juniors — the gap is in how they handle edge cases."
 
-CTA: One sharp question that only someone who knows "{title}" would ask. Not generic.
+CTA: One sharp, specific question that sparks real debate among people who work with {title}.
 
 Return ONLY valid JSON:
 {{
-    "hook": "Bold opening about {title} — stat, confession, or provocative claim. No emojis. Max 18 words.",
-    "body": "7 points about {title} using format: {bullet_format}. No emojis. Topic-specific facts only.",
+    "hook": "One powerful sentence about {title}. No emojis. No fake stats. Max 20 words.",
+    "body": "7 expert observations about {title} using format: {bullet_format}. No emojis. No fake percentages.",
     "bullet_style": "{chosen_bullet}",
     "cta": "Specific debate-starting or experience-sharing question (not 'what are your thoughts?')",
     "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6","#Tag7","#Tag8"],
