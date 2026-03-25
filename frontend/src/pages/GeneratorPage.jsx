@@ -511,7 +511,7 @@ export default function GeneratorPage() {
     const [copied, setCopied] = useState(false);
     const [currentHistoryId, setCurrentHistoryId] = useState(null);
     const [formData, setFormData] = useState({ title: '', tone: 'Professional', audience: '' });
-    const [infographicStyle, setInfographicStyle] = useState('Handwritten Notes');
+    const [infographicStyle, setInfographicStyle] = useState('Whiteboard');
     const [lastGeneratedStyle, setLastGeneratedStyle] = useState(null);
     const [showPostDetails, setShowPostDetails] = useState(true);
     const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
@@ -915,8 +915,34 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                             </div>
 
                                             <div style={{ padding: '0 0 24px', borderBottom: '1px solid #e2e8f0' }}>
-                                                <p style={{ fontSize: 13, fontWeight: 800, color: '#1d4ed8', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><MessageSquare size={14} color="#1d4ed8" /> Post Content</p>
-                                                <p style={{ fontSize: 17, color: '#334155', margin: 0, lineHeight: 1.8, whiteSpace: 'pre-wrap', fontWeight: 400 }}>{c?.body}</p>
+                                                <p style={{ fontSize: 13, fontWeight: 800, color: '#1d4ed8', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><MessageSquare size={14} color="#1d4ed8" /> Post Content</p>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                                    {(c?.body || '').split('\n').filter(l => l.trim()).map((line, i) => {
+                                                        // Detect if line starts with an emoji
+                                                        const emojiMatch = line.match(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u);
+                                                        const dashMatch = line.match(/^—\s*/);
+                                                        if (emojiMatch) {
+                                                            const emoji = emojiMatch[0];
+                                                            const text = line.slice(emoji.length).trim();
+                                                            return (
+                                                                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '10px 14px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                                                                    <span style={{ fontSize: 24, lineHeight: 1, flexShrink: 0, marginTop: 1 }}>{emoji}</span>
+                                                                    <span style={{ fontSize: 16, color: '#1e293b', lineHeight: 1.6, fontWeight: 500 }}>{text}</span>
+                                                                </div>
+                                                            );
+                                                        } else if (dashMatch) {
+                                                            const text = line.replace(/^—\s*/, '');
+                                                            return (
+                                                                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '8px 0' }}>
+                                                                    <span style={{ color: '#c54444', fontWeight: 900, fontSize: 20, lineHeight: 1, flexShrink: 0, marginTop: 2 }}>—</span>
+                                                                    <span style={{ fontSize: 16, color: '#334155', lineHeight: 1.7, fontWeight: 400 }}>{text}</span>
+                                                                </div>
+                                                            );
+                                                        } else {
+                                                            return <p key={i} style={{ fontSize: 16, color: '#334155', margin: 0, lineHeight: 1.7 }}>{line}</p>;
+                                                        }
+                                                    })}
+                                                </div>
                                             </div>
 
                                             <div style={{ padding: '0 0 24px' }}>
