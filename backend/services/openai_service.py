@@ -91,21 +91,32 @@ def generate_linkedin_post(title: str, tone: str, audience: str, style: str = "W
 
         if is_handwritten:
             system_content = (
-                "You are an elite AI infographic designer and LinkedIn content strategist. "
+                "You are a top LinkedIn ghostwriter who has written viral posts for Fortune 500 CEOs. "
+                "Your posts get 50K+ impressions. You NEVER write generic content. "
+                "Every line must be SPECIFIC, SURPRISING, or contain a real insight/number/fact. "
+                "BANNED phrases: 'unique solutions', 'enhances collaboration', 'vital', 'rewarding', 'potential', "
+                "'let's discuss', 'game-changer', 'leverage', 'excited to share'. "
                 "Return ONLY strictly valid JSON — no markdown, no code fences, no extra text. "
                 "Generate EXACTLY 5 tiers (top=most advanced, bottom=most basic) AND EXACTLY 10 categories. "
                 "Tiers: each has use_cases, what_needs, key_risks, insight — all items 5-8 words max. "
                 "Categories 1-6: 4 nodes each. Category 7: 4 nodes. Categories 8-10: 2 nodes each. "
                 "Node sublabels: 5-7 words. Category labels: 2-3 words max. Use warm muted hex colors."
             )
-            prompt = f"""Write a LinkedIn post about "{title}" like personal handwritten notes.
+            prompt = f"""Write a LinkedIn post about "{title}" in a personal, honest, handwritten-notes style.
 Tone: {tone} | Audience: {audience or 'professionals'}
+
+HOOK RULES: Start with a counterintuitive truth, a confession, or a specific number. NOT a question. NOT "Exploring...".
+BODY RULES: Each line = one real insight, lesson, or observation. Specific details > vague statements.
+  BAD: "— It enhances collaboration and efficiency."
+  GOOD: "— I wasted 3 months before realizing X is the bottleneck."
+  BAD: "— Understanding its core components is vital."
+  GOOD: "— Most people skip step 2. That's why they fail."
 
 Return ONLY valid JSON:
 {{
-    "hook": "Honest opening line (max 15 words)",
-    "body": "6-7 short lines like handwritten notes. Use '—' dashes. 1-2 emojis max.",
-    "cta": "Low-pressure question for readers",
+    "hook": "One powerful sentence — counterintuitive truth or specific stat (max 15 words)",
+    "body": "6 lines starting with '—'. Each line = specific insight, real observation, or number. 1-2 emojis max.",
+    "cta": "One specific question that makes readers want to reply (not generic 'share your thoughts')",
     "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6"],
     "style": "{style}",
     "infographic": {{
@@ -157,7 +168,12 @@ EXACTLY 10 CATEGORIES (use a relevant single emoji for each "icon" field — act
 """
         else:
             system_content = (
-                "You are an elite AI infographic designer and LinkedIn content strategist. "
+                "You are a top LinkedIn ghostwriter who writes viral posts for industry leaders. "
+                "Your posts consistently get 100K+ impressions. You write with authority and specificity. "
+                "RULES: Use real numbers, specific facts, contrarian takes. NEVER be vague or generic. "
+                "BANNED words/phrases: 'unique solutions', 'enhances efficiency', 'vital', 'game-changer', "
+                "'leverage', 'excited to share', 'let's discuss', 'in today's world', 'it's important'. "
+                "Each insight must be SPECIFIC enough that readers say 'I never thought of it that way'. "
                 "Return ONLY strictly valid JSON — no markdown, no code fences, no extra text. "
                 "Generate EXACTLY 5 tiers (top=most advanced, bottom=most basic) AND EXACTLY 10 categories. "
                 "Tiers: each has use_cases, what_needs, key_risks, insight — all items 5-8 words max. "
@@ -167,11 +183,24 @@ EXACTLY 10 CATEGORIES (use a relevant single emoji for each "icon" field — act
             prompt = f"""Create a viral LinkedIn post about: "{title}"
 Tone: {tone} | Audience: {audience or 'professionals'}
 
+HOOK: Must be bold, specific, and stop the scroll. Use a stat, contrarian claim, or provocative truth.
+  BAD hook: "Exploring the nuances of [topic]."
+  GOOD hook: "87% of [professionals] get [topic] wrong. Here's what actually works:"
+  GOOD hook: "I spent 2 years and $50K learning [topic]. The real lesson took 10 minutes."
+
+BODY: 7 bullet points. Each starts with a unique, relevant emoji. Each line = specific insight with real detail.
+  BAD: "🔵 It enhances collaboration and efficiency."
+  GOOD: "🔵 The top 10% don't use [common method] — they do [specific alternative] instead."
+  BAD: "🟢 Understanding core components is vital."
+  GOOD: "🟢 Step 3 is where 90% of people quit. It's also where 100% of the results come from."
+
+CTA: Ask something specific that creates debate or makes people want to share their experience.
+
 Return ONLY valid JSON:
 {{
-    "hook": "Electrifying opening line (max 15 words, bold claim or stat)",
-    "body": "7 insights, each starts with unique emoji. Real numbers. Actionable.",
-    "cta": "High-engagement question for comments",
+    "hook": "Bold, specific opening — stat, confession, or contrarian claim (max 15 words)",
+    "body": "7 bullet points, each starting with unique emoji. Specific insights, real numbers, actionable advice.",
+    "cta": "Specific debate-starting or experience-sharing question (not 'what are your thoughts?')",
     "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6","#Tag7","#Tag8"],
     "style": "{style}",
     "infographic": {{
@@ -223,15 +252,15 @@ EXACTLY 10 CATEGORIES (use a relevant single emoji for each "icon" field — act
 """
 
         completion = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": system_content},
                 {"role": "user", "content": prompt}
             ],
             response_format={"type": "json_object"},
-            max_tokens=2400,   # 5 tiers + 10 categories needs ~2000-2200 tokens
-            temperature=0.7,
-            top_p=0.9,
+            max_tokens=2800,
+            temperature=0.8,
+            top_p=0.95,
         )
 
         finish_reason = completion.choices[0].finish_reason
