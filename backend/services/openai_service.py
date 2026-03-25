@@ -167,39 +167,55 @@ EXACTLY 10 CATEGORIES (use a relevant single emoji for each "icon" field — act
 10. Future Trends (2 nodes) — #553c9a — icon: 🔮
 """
         else:
+            import random
+            angles = [
+                "Share a counterintuitive truth most people get wrong about this topic.",
+                "Tell a personal failure story and what you learned from it.",
+                "Give a step-by-step breakdown nobody else explains this clearly.",
+                "Share 7 hard-won lessons that took years to learn.",
+                "Compare the wrong way vs the right way most people approach this.",
+                "Reveal an insider secret that experts know but rarely share publicly.",
+                "Start with a shocking industry statistic and unpack why it matters.",
+            ]
+            chosen_angle = random.choice(angles)
+
             system_content = (
-                "You are a top LinkedIn ghostwriter who writes viral posts for industry leaders. "
-                "Your posts consistently get 100K+ impressions. You write with authority and specificity. "
-                "RULES: Use real numbers, specific facts, contrarian takes. NEVER be vague or generic. "
-                "BANNED words/phrases: 'unique solutions', 'enhances efficiency', 'vital', 'game-changer', "
-                "'leverage', 'excited to share', 'let's discuss', 'in today's world', 'it's important'. "
-                "Each insight must be SPECIFIC enough that readers say 'I never thought of it that way'. "
+                "You are a top LinkedIn ghostwriter who writes viral posts for C-suite executives and thought leaders. "
+                "Your posts get 100K+ impressions. You write with authority, precision, and NO emojis. "
+                "Style: clean, numbered bullet points (1. 2. 3. ...). Professional and direct. "
+                "RULES: Real numbers, specific facts, contrarian takes. Zero vague statements. "
+                "BANNED: emojis of any kind, 'unique solutions', 'game-changer', 'leverage', "
+                "'excited to share', 'let's discuss', 'in today's world', 'it's important', 'vital'. "
+                "Every bullet must contain a SPECIFIC insight — data point, mechanism, or lesson. "
                 "Return ONLY strictly valid JSON — no markdown, no code fences, no extra text. "
-                "Generate EXACTLY 5 tiers (top=most advanced, bottom=most basic) AND EXACTLY 10 categories. "
+                "Generate EXACTLY 5 tiers AND EXACTLY 10 categories. "
                 "Tiers: each has use_cases, what_needs, key_risks, insight — all items 5-8 words max. "
                 "Categories 1-6: 4 nodes each. Category 7: 4 nodes. Categories 8-10: 2 nodes each. "
                 "Node sublabels: 5-7 words. Category labels: 2-3 words max. Use vivid distinct hex colors."
             )
-            prompt = f"""Create a viral LinkedIn post about: "{title}"
+            prompt = f"""Write a LinkedIn post about: "{title}"
 Tone: {tone} | Audience: {audience or 'professionals'}
+Angle for this post: {chosen_angle}
 
-HOOK: Must be bold, specific, and stop the scroll. Use a stat, contrarian claim, or provocative truth.
-  BAD hook: "Exploring the nuances of [topic]."
-  GOOD hook: "87% of [professionals] get [topic] wrong. Here's what actually works:"
-  GOOD hook: "I spent 2 years and $50K learning [topic]. The real lesson took 10 minutes."
+HOOK RULES:
+- Must be a bold statement, a surprising stat, or a short personal confession
+- NO questions as the hook. NO "Exploring..." or "Let's talk about..."
+- Good example: "Most engineers spend 80% of their time on the 20% that doesn't matter."
+- Good example: "I got this wrong for 4 years. Here's what changed everything:"
 
-BODY: 7 bullet points. Each starts with a unique, relevant emoji. Each line = specific insight with real detail.
-  BAD: "🔵 It enhances collaboration and efficiency."
-  GOOD: "🔵 The top 10% don't use [common method] — they do [specific alternative] instead."
-  BAD: "🟢 Understanding core components is vital."
-  GOOD: "🟢 Step 3 is where 90% of people quit. It's also where 100% of the results come from."
+BODY RULES:
+- Exactly 7 numbered points: "1. text", "2. text", etc.
+- NO emojis anywhere
+- Each point = one specific, concrete insight with a real number or mechanism
+- Bad: "2. It improves your workflow significantly."
+- Good: "2. Cutting meeting time by 30% increased our team output by 2x — not by working harder."
 
-CTA: Ask something specific that creates debate or makes people want to share their experience.
+CTA: One sharp question tied directly to the topic. Not generic.
 
 Return ONLY valid JSON:
 {{
-    "hook": "Bold, specific opening — stat, confession, or contrarian claim (max 15 words)",
-    "body": "7 bullet points, each starting with unique emoji. Specific insights, real numbers, actionable advice.",
+    "hook": "Bold opening line — stat, confession, or provocative claim. No emojis. Max 18 words.",
+    "body": "7 numbered points (1. text\\n2. text\\n...). No emojis. Each point is specific and concrete.",
     "cta": "Specific debate-starting or experience-sharing question (not 'what are your thoughts?')",
     "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6","#Tag7","#Tag8"],
     "style": "{style}",

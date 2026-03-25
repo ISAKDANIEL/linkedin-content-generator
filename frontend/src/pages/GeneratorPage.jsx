@@ -916,30 +916,32 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
 
                                             <div style={{ padding: '0 0 24px', borderBottom: '1px solid #e2e8f0' }}>
                                                 <p style={{ fontSize: 13, fontWeight: 800, color: '#1d4ed8', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><MessageSquare size={14} color="#1d4ed8" /> Post Content</p>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                                                     {(c?.body || '').split('\n').filter(l => l.trim()).map((line, i) => {
-                                                        // Detect if line starts with an emoji
-                                                        const emojiMatch = line.match(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u);
-                                                        const dashMatch = line.match(/^—\s*/);
-                                                        if (emojiMatch) {
-                                                            const emoji = emojiMatch[0];
-                                                            const text = line.slice(emoji.length).trim();
+                                                        // Numbered: "1. text"
+                                                        const numMatch = line.match(/^(\d+)\.\s+(.+)/);
+                                                        // Dash: "— text"
+                                                        const dashMatch = line.match(/^—\s*(.+)/);
+                                                        // Bullet: "• text" or "* text"
+                                                        const bulletMatch = line.match(/^[•\*]\s*(.+)/);
+
+                                                        if (numMatch) {
                                                             return (
-                                                                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '10px 14px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
-                                                                    <span style={{ fontSize: 24, lineHeight: 1, flexShrink: 0, marginTop: 1 }}>{emoji}</span>
-                                                                    <span style={{ fontSize: 16, color: '#1e293b', lineHeight: 1.6, fontWeight: 500 }}>{text}</span>
+                                                                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
+                                                                    <span style={{ minWidth: 28, height: 28, borderRadius: '50%', background: '#0f172a', color: '#fff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{numMatch[1]}</span>
+                                                                    <span style={{ fontSize: 16, color: '#1e293b', lineHeight: 1.65, fontWeight: 450 }}>{numMatch[2]}</span>
                                                                 </div>
                                                             );
-                                                        } else if (dashMatch) {
-                                                            const text = line.replace(/^—\s*/, '');
+                                                        } else if (dashMatch || bulletMatch) {
+                                                            const text = (dashMatch || bulletMatch)[1];
                                                             return (
-                                                                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '8px 0' }}>
-                                                                    <span style={{ color: '#c54444', fontWeight: 900, fontSize: 20, lineHeight: 1, flexShrink: 0, marginTop: 2 }}>—</span>
-                                                                    <span style={{ fontSize: 16, color: '#334155', lineHeight: 1.7, fontWeight: 400 }}>{text}</span>
+                                                                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '11px 0', borderBottom: '1px solid #f1f5f9' }}>
+                                                                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#c54444', flexShrink: 0, marginTop: 8 }} />
+                                                                    <span style={{ fontSize: 16, color: '#1e293b', lineHeight: 1.65, fontWeight: 450 }}>{text}</span>
                                                                 </div>
                                                             );
                                                         } else {
-                                                            return <p key={i} style={{ fontSize: 16, color: '#334155', margin: 0, lineHeight: 1.7 }}>{line}</p>;
+                                                            return <p key={i} style={{ fontSize: 16, color: '#334155', margin: '8px 0', lineHeight: 1.7 }}>{line}</p>;
                                                         }
                                                     })}
                                                 </div>
