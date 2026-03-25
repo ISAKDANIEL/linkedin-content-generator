@@ -918,31 +918,57 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                                 <p style={{ fontSize: 13, fontWeight: 800, color: '#1d4ed8', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><MessageSquare size={14} color="#1d4ed8" /> Post Content</p>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                                                     {(c?.body || '').split('\n').filter(l => l.trim()).map((line, i) => {
-                                                        // Numbered: "1. text"
-                                                        const numMatch = line.match(/^(\d+)\.\s+(.+)/);
-                                                        // Dash: "— text"
-                                                        const dashMatch = line.match(/^—\s*(.+)/);
-                                                        // Bullet: "• text" or "* text"
-                                                        const bulletMatch = line.match(/^[•\*]\s*(.+)/);
+                                                        const bs = c?.bullet_style || 'numbered';
 
-                                                        if (numMatch) {
-                                                            return (
-                                                                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
-                                                                    <span style={{ minWidth: 28, height: 28, borderRadius: '50%', background: '#0f172a', color: '#fff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{numMatch[1]}</span>
-                                                                    <span style={{ fontSize: 16, color: '#1e293b', lineHeight: 1.65, fontWeight: 450 }}>{numMatch[2]}</span>
-                                                                </div>
-                                                            );
-                                                        } else if (dashMatch || bulletMatch) {
-                                                            const text = (dashMatch || bulletMatch)[1];
-                                                            return (
-                                                                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '11px 0', borderBottom: '1px solid #f1f5f9' }}>
-                                                                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#c54444', flexShrink: 0, marginTop: 8 }} />
-                                                                    <span style={{ fontSize: 16, color: '#1e293b', lineHeight: 1.65, fontWeight: 450 }}>{text}</span>
-                                                                </div>
-                                                            );
-                                                        } else {
-                                                            return <p key={i} style={{ fontSize: 16, color: '#334155', margin: '8px 0', lineHeight: 1.7 }}>{line}</p>;
-                                                        }
+                                                        // Parse prefix and text
+                                                        const numM    = line.match(/^(\d+)\.\s+(.+)/);
+                                                        const letterM = line.match(/^([A-G])\.\s+(.+)/);
+                                                        const arrowM  = line.match(/^→\s+(.+)/);
+                                                        const diamondM= line.match(/^◆\s+(.+)/);
+                                                        const dashM   = line.match(/^—\s+(.+)/);
+                                                        const text    = (numM?.[2]) || (letterM?.[2]) || (arrowM?.[1]) || (diamondM?.[1]) || (dashM?.[1]) || line;
+                                                        const prefix  = numM?.[1] || letterM?.[1] || null;
+
+                                                        const rowStyle = { display: 'flex', alignItems: 'flex-start', gap: 14, padding: '11px 0', borderBottom: '1px solid #f1f5f9' };
+                                                        const textStyle = { fontSize: 16, color: '#1e293b', lineHeight: 1.65, fontWeight: 450 };
+
+                                                        if (bs === 'numbered' && numM) return (
+                                                            <div key={i} style={rowStyle}>
+                                                                <span style={{ minWidth: 28, height: 28, borderRadius: '50%', background: '#0f172a', color: '#fff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{prefix}</span>
+                                                                <span style={textStyle}>{text}</span>
+                                                            </div>
+                                                        );
+                                                        if (bs === 'letter' && letterM) return (
+                                                            <div key={i} style={rowStyle}>
+                                                                <span style={{ minWidth: 28, height: 28, borderRadius: 6, background: '#1d4ed8', color: '#fff', fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{prefix}</span>
+                                                                <span style={textStyle}>{text}</span>
+                                                            </div>
+                                                        );
+                                                        if (bs === 'arrow' && arrowM) return (
+                                                            <div key={i} style={rowStyle}>
+                                                                <span style={{ color: '#c54444', fontWeight: 900, fontSize: 20, lineHeight: 1, flexShrink: 0, marginTop: 2 }}>→</span>
+                                                                <span style={textStyle}>{text}</span>
+                                                            </div>
+                                                        );
+                                                        if (bs === 'diamond' && diamondM) return (
+                                                            <div key={i} style={rowStyle}>
+                                                                <span style={{ color: '#7c3aed', fontWeight: 900, fontSize: 16, lineHeight: 1, flexShrink: 0, marginTop: 3 }}>◆</span>
+                                                                <span style={textStyle}>{text}</span>
+                                                            </div>
+                                                        );
+                                                        if (bs === 'dash' && dashM) return (
+                                                            <div key={i} style={rowStyle}>
+                                                                <span style={{ color: '#047857', fontWeight: 900, fontSize: 22, lineHeight: 1, flexShrink: 0, marginTop: 0 }}>—</span>
+                                                                <span style={textStyle}>{text}</span>
+                                                            </div>
+                                                        );
+                                                        // fallback
+                                                        return (
+                                                            <div key={i} style={rowStyle}>
+                                                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#94a3b8', flexShrink: 0, marginTop: 9 }} />
+                                                                <span style={textStyle}>{line}</span>
+                                                            </div>
+                                                        );
                                                     })}
                                                 </div>
                                             </div>

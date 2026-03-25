@@ -179,6 +179,16 @@ EXACTLY 10 CATEGORIES (use a relevant single emoji for each "icon" field — act
             ]
             chosen_angle = random.choice(angles)
 
+            bullet_styles = ["numbered", "arrow", "diamond", "letter", "dash"]
+            chosen_bullet = random.choice(bullet_styles)
+            bullet_format = {
+                "numbered": "1. text\\n2. text\\n3. text (use numbers)",
+                "arrow":    "→ text\\n→ text\\n→ text (use → arrow)",
+                "diamond":  "◆ text\\n◆ text\\n◆ text (use ◆ diamond)",
+                "letter":   "A. text\\nB. text\\nC. text (use letters A-G)",
+                "dash":     "— text\\n— text\\n— text (use — em dash)",
+            }[chosen_bullet]
+
             system_content = (
                 "You are a top LinkedIn ghostwriter who writes viral posts for C-suite executives and thought leaders. "
                 "Your posts get 100K+ impressions. You write with authority, precision, and NO emojis. "
@@ -204,18 +214,20 @@ HOOK RULES:
 - Good example: "I got this wrong for 4 years. Here's what changed everything:"
 
 BODY RULES:
-- Exactly 7 numbered points: "1. text", "2. text", etc.
-- NO emojis anywhere
-- Each point = one specific, concrete insight with a real number or mechanism
-- Bad: "2. It improves your workflow significantly."
-- Good: "2. Cutting meeting time by 30% increased our team output by 2x — not by working harder."
+- Exactly 7 points using this format: {bullet_format}
+- NO emojis anywhere. No mixing formats.
+- Every point must directly mention "{title}" concepts, names, tools, or facts
+- Each point must have a real number, statistic, or named mechanism
+- Bad: "It improves your workflow significantly."
+- Good: "Python's asyncio library handles 10,000+ concurrent connections vs Java's 1,000 thread limit."
 
-CTA: One sharp question tied directly to the topic. Not generic.
+CTA: One sharp question that only someone who knows "{title}" would ask. Not generic.
 
 Return ONLY valid JSON:
 {{
-    "hook": "Bold opening line — stat, confession, or provocative claim. No emojis. Max 18 words.",
-    "body": "7 numbered points (1. text\\n2. text\\n...). No emojis. Each point is specific and concrete.",
+    "hook": "Bold opening about {title} — stat, confession, or provocative claim. No emojis. Max 18 words.",
+    "body": "7 points about {title} using format: {bullet_format}. No emojis. Topic-specific facts only.",
+    "bullet_style": "{chosen_bullet}",
     "cta": "Specific debate-starting or experience-sharing question (not 'what are your thoughts?')",
     "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6","#Tag7","#Tag8"],
     "style": "{style}",
@@ -304,19 +316,34 @@ EXACTLY 10 CATEGORIES (use a relevant single emoji for each "icon" field — act
                 cleaned = _re.sub(r'^[\s\-–—•*]+', '', cleaned, flags=_re.MULTILINE)
                 return cleaned.strip()
 
-            # Re-number lines cleanly: strip emojis from each body line, re-prefix with "N. "
+            # Re-format body lines with chosen bullet style
             if content.get('body'):
                 lines = [l.strip() for l in content['body'].split('\n') if l.strip()]
                 clean_lines = []
+                letters = 'ABCDEFG'
                 num = 1
+                bs = chosen_bullet
                 for line in lines:
                     clean = _strip(line)
-                    if clean:
-                        # Remove any existing leading number like "1. " or "1) "
-                        clean = _re.sub(r'^\d+[\.\)]\s*', '', clean)
+                    if not clean:
+                        continue
+                    # Strip any existing prefix (number, letter, arrow, dash, diamond)
+                    clean = _re.sub(r'^(\d+[\.\)]\s*|[A-G][\.\)]\s*|→\s*|◆\s*|—\s*|•\s*|\*\s*)', '', clean).strip()
+                    if not clean:
+                        continue
+                    if bs == 'numbered':
                         clean_lines.append(f"{num}. {clean}")
-                        num += 1
+                    elif bs == 'arrow':
+                        clean_lines.append(f"→ {clean}")
+                    elif bs == 'diamond':
+                        clean_lines.append(f"◆ {clean}")
+                    elif bs == 'letter':
+                        clean_lines.append(f"{letters[min(num-1,6)]}. {clean}")
+                    elif bs == 'dash':
+                        clean_lines.append(f"— {clean}")
+                    num += 1
                 content['body'] = '\n'.join(clean_lines)
+            content['bullet_style'] = chosen_bullet
 
             content['hook'] = _strip(content.get('hook', ''))
             content['cta']  = _strip(content.get('cta', ''))
