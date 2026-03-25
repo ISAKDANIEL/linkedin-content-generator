@@ -28,11 +28,12 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H 191.101.2.4 >> ~/.ssh/known_hosts
+          ssh-keyscan -H makepost.pro >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Deploy backend files
         run: |
-          rsync -az --delete \
+          rsync -az -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" --delete \
             --exclude='venv' \
             --exclude='.venv' \
             --exclude='__pycache__' \
@@ -40,21 +41,21 @@ jobs:
             --exclude='static/images' \
             --exclude='local_data.db' \
             --exclude='.env' \
-            backend/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/linkedin-generator/backend/
+            backend/ root@191.101.2.4:/var/www/linkedin-generator/backend/
 
       - name: Deploy frontend build
         run: |
-          rsync -az --delete \
-            frontend/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/linkedin-generator/frontend/dist/
+          rsync -az -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" --delete \
+            frontend/dist/ root@191.101.2.4:/var/www/linkedin-generator/frontend/dist/
 
       - name: Restart services
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
+          host: 191.101.2.4
+          username: root
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            pip install -r /var/www/linkedin-generator/backend/requirements.txt --quiet
-            sudo systemctl restart makepost.service
-            sudo nginx -t && sudo systemctl reload nginx
-            echo "Deploy done"
+            /var/www/linkedin-generator/backend/venv/bin/pip install -r /var/www/linkedin-generator/backend/requirements.txt --quiet
+            systemctl restart makepost
+            nginx -t && systemctl reload nginx
+            echo "Deploy done!"
