@@ -1816,13 +1816,13 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                                 <Image size={isMobile ? 18 : 22} color="#c54444" />
                                                 <h2 style={{ fontSize: isMobile ? 15 : 20, fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase', letterSpacing: 1.5 }}>AI-Generated Visual</h2>
                                                 <span style={{ fontSize: 11, fontWeight: 700, color: '#7c3aed', background: '#f3e8ff', border: '1px solid #ddd6fe', borderRadius: 20, padding: '3px 10px', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                                                    {STYLES.find(s => s.id === infographicStyle)?.label || infographicStyle}
+                                                    {STYLES.find(s => s.id === (lastGeneratedStyle || infographicStyle))?.label || (lastGeneratedStyle || infographicStyle)}
                                                 </span>
                                             </div>
                                             {/* Fixed 4:5 LinkedIn portrait ratio */}
                                             <div style={{ maxWidth: isMobile ? '100%' : 480, margin: '0 auto', aspectRatio: '4/5', overflow: 'hidden', borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.12)', position: 'relative' }}>
                                                 <div ref={infographicRef} style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-                                                    <InfographicRenderer content={c} title={formData.title} style={infographicStyle} />
+                                                    <InfographicRenderer content={c} title={formData.title} style={lastGeneratedStyle || infographicStyle} />
                                                 </div>
                                             </div>
                                             <div style={{ marginTop: isMobile ? 16 : 24, display: 'flex', justifyContent: 'center' }}>
