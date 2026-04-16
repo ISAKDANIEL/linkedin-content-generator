@@ -1016,10 +1016,10 @@ function FlowchartRenderer({ infographic, title }) {
                         </div>
                         {/* Branch arrows */}
                         <div style={{ display: 'flex', gap: 8, height: 22, flexShrink: 0, position: 'relative' }}>
-                            <svg width="100%" height="22" style={{ position: 'absolute', inset: 0 }} preserveAspectRatio="none">
-                                <motion.path d="M50%,0 L25%,22" stroke="#10b981" strokeWidth="1.6" fill="none"
+                            <svg width="100%" height="22" viewBox="0 0 100 22" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0 }}>
+                                <motion.path d="M50,0 L25,22" stroke="#10b981" strokeWidth="1.6" fill="none"
                                     initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.32, duration: 0.4 }} />
-                                <motion.path d="M50%,0 L75%,22" stroke="#f97316" strokeWidth="1.6" fill="none"
+                                <motion.path d="M50,0 L75,22" stroke="#f97316" strokeWidth="1.6" fill="none"
                                     initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.32, duration: 0.4 }} />
                             </svg>
                         </div>
@@ -1820,8 +1820,8 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                                 </span>
                                             </div>
                                             {/* Fixed 4:5 LinkedIn portrait ratio */}
-                                            <div style={{ maxWidth: isMobile ? '100%' : 480, margin: '0 auto', aspectRatio: '4/5', overflow: 'hidden', borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.12)' }}>
-                                                <div ref={infographicRef} style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+                                            <div style={{ maxWidth: isMobile ? '100%' : 480, margin: '0 auto', aspectRatio: '4/5', overflow: 'hidden', borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.12)', position: 'relative' }}>
+                                                <div ref={infographicRef} style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
                                                     <InfographicRenderer content={c} title={formData.title} style={infographicStyle} />
                                                 </div>
                                             </div>
