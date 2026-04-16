@@ -88,8 +88,369 @@ def generate_linkedin_post(title: str, tone: str, audience: str, style: str = "W
         return None
     try:
         is_handwritten = style == "Handwritten Notes"
+        is_new_style = style in (
+            "Minimalist", "Timeline", "Checklist", "Step-by-Step", "Comparison Table",
+            "Flowchart", "Statistics", "Roadmap", "Problem-Solution"
+        )
 
-        if is_handwritten:
+        if is_new_style:
+            # ── Shared system persona ──────────────────────────────────────────
+            system_content = (
+                "You are an expert LinkedIn content strategist and infographic designer. "
+                "You create structured, visually-oriented content for professional audiences. "
+                "Every output must be specific, concise, and immediately useful. "
+                "BANNED: vague phrases, filler words, generic advice. "
+                "Return ONLY strictly valid JSON — no markdown, no code fences, no extra text."
+            )
+
+            if style == "Minimalist":
+                prompt = f"""Create a minimalist LinkedIn infographic about "{title}".
+Tone: {tone} | Audience: {audience or 'professionals'}
+
+Return ONLY valid JSON:
+{{
+    "hook": "One sharp insight sentence (max 12 words, no emojis)",
+    "body": "3 ultra-concise observations. Each line starts with '—'. Max 8 words per line. No emojis.",
+    "cta": "One specific debate-starting question (max 15 words)",
+    "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5"],
+    "style": "{style}",
+    "infographic": {{
+        "type": "minimalist",
+        "title": "{title}",
+        "tagline": "One-line value proposition (6-9 words)",
+        "items": [
+            {{"phrase": "Short power phrase (3-5 words)", "icon": "🎯"}},
+            {{"phrase": "Short power phrase (3-5 words)", "icon": "💡"}},
+            {{"phrase": "Short power phrase (3-5 words)", "icon": "⚡"}},
+            {{"phrase": "Short power phrase (3-5 words)", "icon": "🔑"}},
+            {{"phrase": "Short power phrase (3-5 words)", "icon": "📌"}},
+            {{"phrase": "Short power phrase (3-5 words)", "icon": "🚀"}}
+        ],
+        "stat": "One powerful stat or key number related to {title} (real, known fact)",
+        "footer_note": "One crisp takeaway sentence (max 10 words)"
+    }}
+}}
+
+Make all phrases specific to "{title}" — NOT generic. Items should be distinct concepts/principles."""
+
+            elif style == "Timeline":
+                prompt = f"""Create a timeline LinkedIn infographic about "{title}".
+Tone: {tone} | Audience: {audience or 'professionals'}
+
+Return ONLY valid JSON:
+{{
+    "hook": "One powerful sentence about {title} progression (max 15 words, no emojis)",
+    "body": "4 key milestones or phases described in 1 sentence each. Use '→' prefix. No emojis.",
+    "cta": "One forward-looking question about {title}",
+    "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6"],
+    "style": "{style}",
+    "infographic": {{
+        "type": "timeline",
+        "title": "{title}",
+        "subtitle": "The Evolution of {title} (or relevant framing)",
+        "steps": [
+            {{"label": "Phase/Step title (2-4 words)", "desc": "What happened or what to do (8-12 words)", "marker": "Year or Step 1", "color": "#E53E3E", "icon": "🌱"}},
+            {{"label": "Phase/Step title (2-4 words)", "desc": "What happened or what to do (8-12 words)", "marker": "Year or Step 2", "color": "#DD6B20", "icon": "🔨"}},
+            {{"label": "Phase/Step title (2-4 words)", "desc": "What happened or what to do (8-12 words)", "marker": "Year or Step 3", "color": "#D69E2E", "icon": "⚙️"}},
+            {{"label": "Phase/Step title (2-4 words)", "desc": "What happened or what to do (8-12 words)", "marker": "Year or Step 4", "color": "#38A169", "icon": "🚀"}},
+            {{"label": "Phase/Step title (2-4 words)", "desc": "What happened or what to do (8-12 words)", "marker": "Year or Step 5", "color": "#3182CE", "icon": "🏆"}}
+        ]
+    }}
+}}
+
+Make steps tell a coherent STORY or PROGRESSION for "{title}". Labels and markers must be specific."""
+
+            elif style == "Checklist":
+                prompt = f"""Create a checklist LinkedIn infographic about "{title}".
+Tone: {tone} | Audience: {audience or 'professionals'}
+
+Return ONLY valid JSON:
+{{
+    "hook": "One action-oriented sentence about {title} (max 15 words, no emojis)",
+    "body": "5 must-do action items. Each starts with a verb. Use '✓' prefix. No emojis.",
+    "cta": "One question asking which item they struggle with most",
+    "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6"],
+    "style": "{style}",
+    "infographic": {{
+        "type": "checklist",
+        "title": "{title}",
+        "subtitle": "The Essential {title} Checklist",
+        "sections": [
+            {{
+                "title": "Section name (2-3 words)",
+                "color": "#E53E3E",
+                "icon": "🎯",
+                "items": ["Action verb + specific task (5-8 words)", "Action verb + specific task (5-8 words)", "Action verb + specific task (5-8 words)"]
+            }},
+            {{
+                "title": "Section name (2-3 words)",
+                "color": "#3182CE",
+                "icon": "🔧",
+                "items": ["Action verb + specific task (5-8 words)", "Action verb + specific task (5-8 words)", "Action verb + specific task (5-8 words)"]
+            }},
+            {{
+                "title": "Section name (2-3 words)",
+                "color": "#38A169",
+                "icon": "📊",
+                "items": ["Action verb + specific task (5-8 words)", "Action verb + specific task (5-8 words)"]
+            }},
+            {{
+                "title": "Section name (2-3 words)",
+                "color": "#D69E2E",
+                "icon": "💡",
+                "items": ["Action verb + specific task (5-8 words)", "Action verb + specific task (5-8 words)"]
+            }}
+        ]
+    }}
+}}
+
+All items must be actionable, specific to "{title}", and immediately useful. Use real tasks, not vague advice."""
+
+            elif style == "Step-by-Step":
+                prompt = f"""Create a step-by-step process LinkedIn infographic about "{title}".
+Tone: {tone} | Audience: {audience or 'professionals'}
+
+Return ONLY valid JSON:
+{{
+    "hook": "One sentence about why this process matters for {title} (max 15 words, no emojis)",
+    "body": "6 sequential steps described in 1 crisp sentence each. Use numbered format. No emojis.",
+    "cta": "One question about which step people find hardest",
+    "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6"],
+    "style": "{style}",
+    "infographic": {{
+        "type": "steps",
+        "title": "{title}",
+        "subtitle": "How to master {title} step by step",
+        "steps": [
+            {{"num": 1, "title": "Step name (2-4 words)", "detail": "Exactly what to do (8-12 words)", "tip": "Pro tip (6-9 words)", "icon": "🎯", "color": "#E53E3E"}},
+            {{"num": 2, "title": "Step name (2-4 words)", "detail": "Exactly what to do (8-12 words)", "tip": "Pro tip (6-9 words)", "icon": "📋", "color": "#DD6B20"}},
+            {{"num": 3, "title": "Step name (2-4 words)", "detail": "Exactly what to do (8-12 words)", "tip": "Pro tip (6-9 words)", "icon": "⚙️", "color": "#D69E2E"}},
+            {{"num": 4, "title": "Step name (2-4 words)", "detail": "Exactly what to do (8-12 words)", "tip": "Pro tip (6-9 words)", "icon": "🔨", "color": "#38A169"}},
+            {{"num": 5, "title": "Step name (2-4 words)", "detail": "Exactly what to do (8-12 words)", "tip": "Pro tip (6-9 words)", "icon": "🚀", "color": "#3182CE"}},
+            {{"num": 6, "title": "Step name (2-4 words)", "detail": "Exactly what to do (8-12 words)", "tip": "Pro tip (6-9 words)", "icon": "🏆", "color": "#7B2D8B"}}
+        ]
+    }}
+}}
+
+Steps MUST be sequential — each step builds on the previous. Specific to "{title}", not generic."""
+
+            elif style == "Comparison Table":
+                prompt = f"""Create a comparison table LinkedIn infographic about "{title}".
+Tone: {tone} | Audience: {audience or 'professionals'}
+
+Return ONLY valid JSON:
+{{
+    "hook": "One contrasting statement that sets up the comparison for {title} (max 15 words)",
+    "body": "3 key differences explained. Each starts with a comparison word. Use '◆' prefix. No emojis.",
+    "cta": "One question about which option they prefer and why",
+    "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6"],
+    "style": "{style}",
+    "infographic": {{
+        "type": "comparison",
+        "title": "{title}",
+        "subtitle": "Side-by-side comparison for {title}",
+        "columns": ["Option A Name (2-4 words)", "Option B Name (2-4 words)", "Option C Name (2-4 words)"],
+        "column_colors": ["#E53E3E", "#3182CE", "#38A169"],
+        "column_icons": ["⚡", "🔧", "🎯"],
+        "rows": [
+            {{"criterion": "Criterion (2-3 words)", "values": ["Specific value A (3-6 words)", "Specific value B (3-6 words)", "Specific value C (3-6 words)"]}},
+            {{"criterion": "Criterion (2-3 words)", "values": ["Specific value A (3-6 words)", "Specific value B (3-6 words)", "Specific value C (3-6 words)"]}},
+            {{"criterion": "Criterion (2-3 words)", "values": ["Specific value A (3-6 words)", "Specific value B (3-6 words)", "Specific value C (3-6 words)"]}},
+            {{"criterion": "Criterion (2-3 words)", "values": ["Specific value A (3-6 words)", "Specific value B (3-6 words)", "Specific value C (3-6 words)"]}},
+            {{"criterion": "Criterion (2-3 words)", "values": ["Specific value A (3-6 words)", "Specific value B (3-6 words)", "Specific value C (3-6 words)"]}},
+            {{"criterion": "Criterion (2-3 words)", "values": ["Specific value A (3-6 words)", "Specific value B (3-6 words)", "Specific value C (3-6 words)"]}}
+        ],
+        "verdict": "One-line recommendation (8-12 words)"
+    }}
+}}
+
+Make all comparisons meaningful and specific to "{title}". Columns should be real distinct alternatives."""
+
+            elif style == "Flowchart":
+                prompt = f"""Create a flowchart LinkedIn infographic about "{title}".
+Tone: {tone} | Audience: {audience or 'professionals'}
+
+Return ONLY valid JSON:
+{{
+    "hook": "One sentence about why the process matters for {title} (max 15 words, no emojis)",
+    "body": "5 flow steps described sequentially. Use '→' prefix. No emojis.",
+    "cta": "One question about which step is hardest for most people",
+    "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6"],
+    "style": "{style}",
+    "infographic": {{
+        "type": "flowchart",
+        "title": "{title}",
+        "subtitle": "Step-by-step decision flow for {title}",
+        "nodes": [
+            {{"id": 1, "label": "Start (2-3 words)", "detail": "Entry point description (5-8 words)", "shape": "start", "color": "#6366f1"}},
+            {{"id": 2, "label": "Process step (2-4 words)", "detail": "Specific action to take (6-9 words)", "shape": "process", "color": "#3b82f6"}},
+            {{"id": 3, "label": "Key Decision (2-4 words)", "detail": "What you are deciding here (5-8 words)", "shape": "decision", "color": "#f59e0b", "yes_label": "Yes — proceed", "no_label": "No — rethink"}},
+            {{"id": 4, "label": "Path A step (2-4 words)", "detail": "What happens on YES path (6-9 words)", "shape": "process", "color": "#10b981"}},
+            {{"id": 5, "label": "Path B step (2-4 words)", "detail": "What happens on NO path (6-9 words)", "shape": "process", "color": "#f97316"}},
+            {{"id": 6, "label": "End result (2-3 words)", "detail": "Final outcome achieved (5-8 words)", "shape": "end", "color": "#6366f1"}}
+        ],
+        "connections": [
+            {{"from": 1, "to": 2}},
+            {{"from": 2, "to": 3}},
+            {{"from": 3, "to": 4, "label": "Yes"}},
+            {{"from": 3, "to": 5, "label": "No"}},
+            {{"from": 4, "to": 6}},
+            {{"from": 5, "to": 6}}
+        ]
+    }}
+}}
+
+Make all labels and details specific to "{title}". Nodes must tell a coherent logical story."""
+
+            elif style == "Statistics":
+                prompt = f"""Create a statistics/data LinkedIn infographic about "{title}".
+Tone: {tone} | Audience: {audience or 'professionals'}
+
+Return ONLY valid JSON:
+{{
+    "hook": "One bold data-driven statement about {title} (max 15 words, no emojis)",
+    "body": "4 key statistics explained. Each starts with the number. Use '◆' prefix. No emojis.",
+    "cta": "One question challenging people to reflect on these numbers",
+    "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6"],
+    "style": "{style}",
+    "infographic": {{
+        "type": "statistics",
+        "title": "{title}",
+        "subtitle": "The numbers that matter",
+        "hero_stat": {{
+            "value": "KEY NUMBER (e.g. 73% or 2.4x or $12K)",
+            "label": "What this number represents (5-8 words)",
+            "source": "Source type (e.g. Industry Report 2024)"
+        }},
+        "stats": [
+            {{"value": "XX%", "label": "Short label (3-5 words)", "detail": "Context for this stat (7-10 words)", "icon": "📈", "color": "#6366f1", "bar_pct": 75}},
+            {{"value": "XXx", "label": "Short label (3-5 words)", "detail": "Context for this stat (7-10 words)", "icon": "⚡", "color": "#10b981", "bar_pct": 60}},
+            {{"value": "$XXK", "label": "Short label (3-5 words)", "detail": "Context for this stat (7-10 words)", "icon": "💰", "color": "#f59e0b", "bar_pct": 48}},
+            {{"value": "XXx", "label": "Short label (3-5 words)", "detail": "Context for this stat (7-10 words)", "icon": "🎯", "color": "#ef4444", "bar_pct": 85}}
+        ],
+        "insight": "One sharp concluding insight from all the data (10-14 words)",
+        "source_line": "Data from [source type] research & industry analysis"
+    }}
+}}
+
+CRITICAL: bar_pct must be an INTEGER between 10-95. Use real known statistics or clearly approximate ones.
+Make all stats specific and compelling for a {audience or 'professional'} audience interested in {title}."""
+
+            elif style == "Roadmap":
+                prompt = f"""Create a roadmap LinkedIn infographic about "{title}".
+Tone: {tone} | Audience: {audience or 'professionals'}
+
+Return ONLY valid JSON:
+{{
+    "hook": "One ambitious sentence about the journey to mastering {title} (max 15 words)",
+    "body": "4 key phases described. Each starts with the phase name. Use numbered format. No emojis.",
+    "cta": "One question about which phase people are currently in",
+    "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6"],
+    "style": "{style}",
+    "infographic": {{
+        "type": "roadmap",
+        "title": "{title}",
+        "subtitle": "Your path to mastering {title}",
+        "phases": [
+            {{
+                "phase_num": 1,
+                "phase_name": "Phase name (2-3 words)",
+                "duration": "Week 1–2",
+                "color": "#6366f1",
+                "bg_color": "#eef2ff",
+                "milestones": ["Specific milestone (4-7 words)", "Specific milestone (4-7 words)", "Specific milestone (4-7 words)"],
+                "outcome": "What you achieve at end of this phase (6-9 words)"
+            }},
+            {{
+                "phase_num": 2,
+                "phase_name": "Phase name (2-3 words)",
+                "duration": "Week 3–4",
+                "color": "#3b82f6",
+                "bg_color": "#eff6ff",
+                "milestones": ["Specific milestone (4-7 words)", "Specific milestone (4-7 words)", "Specific milestone (4-7 words)"],
+                "outcome": "What you achieve at end of this phase (6-9 words)"
+            }},
+            {{
+                "phase_num": 3,
+                "phase_name": "Phase name (2-3 words)",
+                "duration": "Month 2",
+                "color": "#10b981",
+                "bg_color": "#ecfdf5",
+                "milestones": ["Specific milestone (4-7 words)", "Specific milestone (4-7 words)", "Specific milestone (4-7 words)"],
+                "outcome": "What you achieve at end of this phase (6-9 words)"
+            }},
+            {{
+                "phase_num": 4,
+                "phase_name": "Phase name (2-3 words)",
+                "duration": "Month 3+",
+                "color": "#f59e0b",
+                "bg_color": "#fffbeb",
+                "milestones": ["Specific milestone (4-7 words)", "Specific milestone (4-7 words)", "Specific milestone (4-7 words)"],
+                "outcome": "What you achieve at end of this phase (6-9 words)"
+            }}
+        ],
+        "end_goal": "The ultimate outcome of completing all 4 phases (8-12 words)"
+    }}
+}}
+
+Make milestones concrete and action-oriented, specific to "{title}". Durations should be realistic."""
+
+            elif style == "Problem-Solution":
+                prompt = f"""Create a problem-solution LinkedIn infographic about "{title}".
+Tone: {tone} | Audience: {audience or 'professionals'}
+
+Return ONLY valid JSON:
+{{
+    "hook": "One sentence naming the core problem with {title} that most people face (max 15 words)",
+    "body": "4 problem-solution pairs. Format: 'PROBLEM: ... → SOLUTION: ...' per line. Use '◆' prefix.",
+    "cta": "One question asking which problem resonates most with them",
+    "hashtags": ["#Tag1","#Tag2","#Tag3","#Tag4","#Tag5","#Tag6"],
+    "style": "{style}",
+    "infographic": {{
+        "type": "problem_solution",
+        "title": "{title}",
+        "subtitle": "From pain points to breakthroughs",
+        "pairs": [
+            {{
+                "problem": "Specific problem (6-10 words — something real people actually face)",
+                "solution": "Specific solution (6-10 words — actionable fix)",
+                "problem_icon": "😤",
+                "solution_icon": "✅",
+                "impact": "Measurable result of applying this (5-8 words)"
+            }},
+            {{
+                "problem": "Specific problem (6-10 words)",
+                "solution": "Specific solution (6-10 words)",
+                "problem_icon": "⚠️",
+                "solution_icon": "🎯",
+                "impact": "Measurable result (5-8 words)"
+            }},
+            {{
+                "problem": "Specific problem (6-10 words)",
+                "solution": "Specific solution (6-10 words)",
+                "problem_icon": "😰",
+                "solution_icon": "💡",
+                "impact": "Measurable result (5-8 words)"
+            }},
+            {{
+                "problem": "Specific problem (6-10 words)",
+                "solution": "Specific solution (6-10 words)",
+                "problem_icon": "🚫",
+                "solution_icon": "🚀",
+                "impact": "Measurable result (5-8 words)"
+            }}
+        ],
+        "cta_banner": "One motivating call-to-action statement (8-12 words)"
+    }}
+}}
+
+Make all problems real pain points that {audience or 'professionals'} actually experience with {title}.
+Make solutions immediately actionable. Impact must be specific and believable."""
+
+            # chosen_bullet fallback for new styles (not used in emoji stripping but referenced later)
+            chosen_bullet = "arrow"
+
+        elif is_handwritten:
             system_content = (
                 "You are a top LinkedIn ghostwriter who has written viral posts for Fortune 500 CEOs. "
                 "Your posts get 50K+ impressions. You NEVER write generic content. "
@@ -309,7 +670,7 @@ EXACTLY 10 CATEGORIES (use a relevant single emoji for each "icon" field — act
         content = json.loads(completion.choices[0].message.content)
 
         # ── Strip all emojis from hook, body, cta (guaranteed clean text) ────────
-        if not is_handwritten:
+        if not is_handwritten and not is_new_style:
             import re as _re
             _emoji_pattern = _re.compile(
                 "[\U00010000-\U0010ffff"

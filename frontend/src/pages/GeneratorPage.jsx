@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wand2, Loader2, Copy, RefreshCw, Download, Check, Image, FileText, Palette, Zap, MessageSquare, Target, Hash, ChevronDown, ChevronUp, ShoppingCart } from 'lucide-react';
+import { Wand2, Loader2, Copy, RefreshCw, Download, Check, Image, FileText, Palette, Zap, MessageSquare, Target, Hash, ChevronDown, ChevronUp, ShoppingCart, GitBranch, BarChart2, Map, Lightbulb } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
 import { generateContent, historyAPI, paymentAPI, API_BASE } from '../services/api';
@@ -395,77 +395,472 @@ function ExecutiveRenderer({ infographic, title }) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   HANDWRITTEN NOTES — Lined paper, numbered study cards, margin notes
+   HANDWRITTEN NOTES — Graph-paper notebook, sketchy icons, hex% badges,
+   mini hand-drawn charts, spiral binding on right edge
 ══════════════════════════════════════════════════════════════════════════════ */
+
+// Mini chart types rendered as SVG sketches
+function SketchChart({ type, color, idx }) {
+    const sw = 1.4; // stroke-width
+    if (type === 'bars') {
+        const heights = [0.55, 0.80, 0.45, 1.0, 0.65, 0.70];
+        return (
+            <svg width="48" height="34" viewBox="0 0 48 34" fill="none">
+                {heights.map((h, bi) => (
+                    <rect key={bi} x={bi * 8 + 1} y={34 - h * 28} width="6" height={h * 28}
+                        stroke={color} strokeWidth={sw} fill={`${color}22`}
+                        style={{ transform: `rotate(${(bi % 3) * 0.3 - 0.3}deg)` }} />
+                ))}
+                {/* x-axis */}
+                <line x1="0" y1="33" x2="48" y2="33.5" stroke={color} strokeWidth={sw} />
+            </svg>
+        );
+    }
+    if (type === 'pie') {
+        const pct = [0.72, 0.81, 0.64, 0.47, 0.57, 0.71][idx % 6];
+        const angle = pct * 360;
+        const r = 14; const cx = 17; const cy = 17;
+        const rad = (a) => a * Math.PI / 180;
+        const x1 = cx + r * Math.cos(rad(-90));
+        const y1 = cy + r * Math.sin(rad(-90));
+        const x2 = cx + r * Math.cos(rad(angle - 90));
+        const y2 = cy + r * Math.sin(rad(angle - 90));
+        const large = angle > 180 ? 1 : 0;
+        return (
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                <circle cx={cx} cy={cy} r={r} stroke={color} strokeWidth={sw} fill={`${color}12`} />
+                <path d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z`}
+                    fill={`${color}40`} stroke={color} strokeWidth={sw} />
+                {/* Hatching lines in filled sector */}
+                {[45,55,65].map((a,i) => {
+                    const ax = cx + r * Math.cos(rad(a)); const ay = cy + r * Math.sin(rad(a));
+                    return <line key={i} x1={cx} y1={cy} x2={ax} y2={ay} stroke={color} strokeWidth="0.8" opacity="0.5" />;
+                })}
+            </svg>
+        );
+    }
+    if (type === 'dots') {
+        // Diamond/dot grid pattern
+        return (
+            <svg width="44" height="34" viewBox="0 0 44 34" fill="none">
+                {[0,1,2,3].map(row => [0,1,2,3,4].map(col => {
+                    const filled = (row * 5 + col) < 14;
+                    return (
+                        <rect key={`${row}-${col}`}
+                            x={col * 9 + 2} y={row * 8 + 2} width="6" height="6"
+                            rx="1"
+                            stroke={color} strokeWidth={sw}
+                            fill={filled ? `${color}45` : 'none'}
+                            transform={`rotate(45 ${col * 9 + 5} ${row * 8 + 5})`}
+                        />
+                    );
+                }))}
+            </svg>
+        );
+    }
+    if (type === 'trend') {
+        // Rising line chart with shaded area
+        const pts = [[2,28],[10,20],[18,22],[26,12],[34,15],[42,6]];
+        const pathD = pts.map((p,i) => `${i===0?'M':'L'}${p[0]},${p[1]}`).join(' ');
+        const areaD = pathD + ` L42,32 L2,32 Z`;
+        return (
+            <svg width="46" height="34" viewBox="0 0 46 34" fill="none">
+                <path d={areaD} fill={`${color}20`} />
+                <path d={pathD} stroke={color} strokeWidth={sw} strokeLinejoin="round" />
+                {pts.map((p,i) => <circle key={i} cx={p[0]} cy={p[1]} r="1.8" fill={color} />)}
+                <line x1="0" y1="32" x2="46" y2="32" stroke={color} strokeWidth="0.8" opacity="0.5" />
+            </svg>
+        );
+    }
+    if (type === 'hbars') {
+        // Horizontal bars
+        const ws = [0.75, 0.90, 0.55, 0.80, 0.65];
+        return (
+            <svg width="48" height="34" viewBox="0 0 48 34" fill="none">
+                {ws.map((w, bi) => (
+                    <g key={bi}>
+                        <rect x="2" y={bi * 6 + 2} width={w * 44} height="4"
+                            stroke={color} strokeWidth={sw} fill={`${color}30`} />
+                    </g>
+                ))}
+            </svg>
+        );
+    }
+    // default: scatter
+    const pts2 = [[6,26],[14,18],[10,10],[22,22],[30,8],[38,16],[26,28]];
+    return (
+        <svg width="48" height="34" viewBox="0 0 48 34" fill="none">
+            {pts2.map((p,i) => <circle key={i} cx={p[0]} cy={p[1]} r="2.5" stroke={color} strokeWidth={sw} fill={`${color}25`} />)}
+        </svg>
+    );
+}
+
+// Sketchy icon box — each index gets a different doodle
+function SketchIcon({ idx, color, emoji }) {
+    const icons = ['🧠','📚','🔬','🎨','🏆','📜','💡','⚡','🎯','🔧'];
+    return (
+        <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
+            {/* Sketchy square border — slightly rotated */}
+            <svg width="44" height="44" viewBox="0 0 44 44" fill="none" style={{ position: 'absolute', inset: 0 }}>
+                <rect x="3" y="3" width="38" height="38" rx="3"
+                    stroke={color} strokeWidth="1.5"
+                    strokeDasharray={idx % 2 === 0 ? '3 2' : '0'}
+                    fill={`${color}10`}
+                    transform={`rotate(${(idx % 3) - 1} 22 22)`}
+                />
+                {/* second rect for double-line sketch effect */}
+                <rect x="5" y="5" width="34" height="34" rx="2"
+                    stroke={color} strokeWidth="0.7" opacity="0.4"
+                    transform={`rotate(${(idx % 3) * 0.8} 22 22)`}
+                    fill="none"
+                />
+            </svg>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, lineHeight: 1 }}>
+                {emoji || icons[idx % icons.length]}
+            </div>
+        </div>
+    );
+}
+
+const CHART_TYPES = ['bars', 'pie', 'dots', 'trend', 'hbars', 'bars'];
+const INK_COLORS = ['#c0392b','#2980b9','#27ae60','#8e44ad','#e67e22','#16a085'];
+
 function HandwrittenRenderer({ infographic, title }) {
     const tiers = infographic?.tiers || [];
     const categories = infographic?.categories || [];
-    const items = tiers.length > 0 ? tiers : categories.slice(0, 5).map(c => ({
-        name: c.label, color: c.color, tagline: c.nodes?.[0]?.sublabel || '',
-        use_cases: (c.nodes || []).slice(0, 2).map(n => n.label),
-        what_needs: [],
-        key_risks: (c.nodes || []).slice(2, 3).map(n => n.label),
-        insight: c.nodes?.[3]?.label || '',
-    }));
-    const TABS = ['#e74c3c','#e67e22','#f1c40f','#2ecc71','#3498db'];
+    const items = tiers.length > 0
+        ? tiers.slice(0, 6).map((t, i) => ({
+            name: t.name,
+            tagline: t.tagline || '',
+            desc: (t.use_cases || [])[0] || (t.what_needs || [])[0] || '',
+            pct: (() => {
+                // Try to extract a number from insight, else derive from position
+                const m = (t.insight || '').match(/\d+/);
+                return m ? Math.min(99, Math.max(10, parseInt(m[0]))) : [69,81,64,47,57,71][i % 6];
+            })(),
+            emoji: null,
+            color: INK_COLORS[i % INK_COLORS.length],
+        }))
+        : categories.slice(0, 6).map((c, i) => ({
+            name: c.label,
+            tagline: (c.nodes || [])[0]?.sublabel || '',
+            desc: (c.nodes || [])[1]?.label || '',
+            pct: [69,81,64,47,57,71][i % 6],
+            emoji: resolveIcon(c.icon, i),
+            color: INK_COLORS[i % INK_COLORS.length],
+        }));
+
+    const INK = '#2c3020';
+    const PAPER = '#f2eddf';
+    const GRID = 'rgba(80,80,0,0.09)';
+
     return (
-        <div style={{ background: '#fdf6e3', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Caveat','Segoe Print','Comic Sans MS',cursive", overflow: 'hidden', position: 'relative', boxSizing: 'border-box' }}>
-            {/* Lined paper */}
-            <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(transparent,transparent 27px,#d4c5a945 27px,#d4c5a945 28px)', pointerEvents: 'none' }} />
-            {/* Red margin line */}
-            <div style={{ position: 'absolute', top: 0, bottom: 0, left: 50, width: 1, background: '#e8a5a560', pointerEvents: 'none' }} />
-            {/* Header */}
-            <div style={{ padding: '12px 16px 8px 60px', flexShrink: 0, position: 'relative' }}>
-                <div style={{ fontSize: 7.5, fontWeight: 700, color: '#999', letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'system-ui', marginBottom: 2 }}>MY NOTES ON</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#2c1810', lineHeight: 1.1 }}>{title}</div>
-                <svg style={{ display: 'block', marginTop: 3 }} height="6" width="200" viewBox="0 0 200 6">
-                    <path d="M0,3 Q10,0 20,3 Q30,6 40,3 Q50,0 60,3 Q70,6 80,3 Q90,0 100,3 Q110,6 120,3 Q130,0 140,3 Q150,6 160,3 Q170,0 180,3 Q190,6 200,3" stroke="#e74c3c" strokeWidth="1.5" fill="none" />
-                </svg>
-                <div style={{ fontSize: 7.5, color: '#b0896a', marginTop: 3, fontFamily: 'system-ui' }}>makepost.pro study notes ✏️</div>
+        <div style={{
+            background: PAPER,
+            width: '100%', height: '100%',
+            display: 'flex', flexDirection: 'row',
+            fontFamily: "'Caveat','Segoe Print','Comic Sans MS',cursive",
+            overflow: 'hidden', boxSizing: 'border-box', position: 'relative',
+        }}>
+            {/* ── Graph paper grid ── */}
+            <div style={{
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                backgroundImage: `linear-gradient(${GRID} 1px, transparent 1px), linear-gradient(90deg, ${GRID} 1px, transparent 1px)`,
+                backgroundSize: '18px 18px',
+            }} />
+
+            {/* ── Main content column ── */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }}>
+
+                {/* ── Title ── */}
+                <div style={{ padding: '10px 10px 6px 14px', flexShrink: 0, textAlign: 'center', position: 'relative' }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: INK, lineHeight: 1.1, letterSpacing: 0.5 }}>{title}</div>
+                    {/* wavy underline */}
+                    <svg style={{ display: 'block', margin: '3px auto 0' }} width="180" height="7" viewBox="0 0 180 7">
+                        <path d="M0,3.5 Q15,0 30,3.5 Q45,7 60,3.5 Q75,0 90,3.5 Q105,7 120,3.5 Q135,0 150,3.5 Q165,7 180,3.5"
+                            stroke="#c0392b" strokeWidth="1.8" fill="none" />
+                    </svg>
+                </div>
+
+                {/* ── Row divider under title ── */}
+                <div style={{ height: 1, background: `${INK}20`, marginInline: 10, flexShrink: 0 }} />
+
+                {/* ── Item rows ── */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: '4px 6px 4px 10px' }}>
+                    {items.map((item, i) => {
+                        const isLast = i === items.length - 1;
+                        return (
+                            <motion.div key={i}
+                                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.07, type: 'spring', stiffness: 180, damping: 20 }}
+                                style={{
+                                    flex: 1, display: 'flex', alignItems: 'center', gap: 7,
+                                    borderBottom: isLast ? 'none' : `1px dashed ${INK}20`,
+                                    padding: '3px 0',
+                                    minHeight: 0,
+                                }}
+                            >
+                                {/* Left: sketch icon */}
+                                <SketchIcon idx={i} color={item.color} emoji={item.emoji} />
+
+                                {/* Center: title + body text */}
+                                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                                    <div style={{ fontSize: 12, fontWeight: 700, color: INK, lineHeight: 1.2, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.name}</div>
+                                    {(item.tagline || item.desc) && (
+                                        <div style={{ fontSize: 8, color: `${INK}90`, lineHeight: 1.35, marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontFamily: 'system-ui', fontStyle: 'italic' }}>
+                                            {item.tagline || item.desc}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Percentage hexagon badge */}
+                                <div style={{ position: 'relative', width: 40, height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <svg width="40" height="44" viewBox="0 0 40 44" fill="none" style={{ position: 'absolute' }}>
+                                        {/* outer hex */}
+                                        <polygon points="20,2 37,11.5 37,32.5 20,42 3,32.5 3,11.5"
+                                            stroke={item.color} strokeWidth="1.6" fill={`${item.color}12`} />
+                                        {/* inner hex for double-line sketch look */}
+                                        <polygon points="20,6 33,13.5 33,30.5 20,38 7,30.5 7,13.5"
+                                            stroke={item.color} strokeWidth="0.7" fill="none" opacity="0.4" />
+                                    </svg>
+                                    <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', lineHeight: 1 }}>
+                                        <div style={{ fontSize: 11, fontWeight: 700, color: item.color }}>{item.pct}%</div>
+                                    </div>
+                                </div>
+
+                                {/* Arrow */}
+                                <svg width="14" height="10" viewBox="0 0 14 10" fill="none" style={{ flexShrink: 0 }}>
+                                    <line x1="0" y1="5" x2="11" y2="5" stroke={item.color} strokeWidth="1.4" />
+                                    <path d="M7 1.5 L11 5 L7 8.5" stroke={item.color} strokeWidth="1.4" strokeLinejoin="round" fill="none" />
+                                </svg>
+
+                                {/* Right: mini sketch chart */}
+                                <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <SketchChart type={CHART_TYPES[i % CHART_TYPES.length]} color={item.color} idx={i} />
+                                </div>
+                            </motion.div>
+                        );
+                    })}
+                </div>
+
+                {/* ── Footer ── */}
+                <div style={{ padding: '3px 10px', flexShrink: 0, textAlign: 'center', borderTop: `1px dashed ${INK}15` }}>
+                    <span style={{ fontSize: 7.5, color: `${INK}55`, fontFamily: 'system-ui', letterSpacing: 0.5 }}>makepost.pro  ✏️  study notes</span>
+                </div>
             </div>
-            {/* Study cards */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, padding: '4px 10px 4px 60px', minHeight: 0 }}>
-                {items.slice(0, 5).map((tier, i) => {
-                    const tabColor = tier.color || TABS[i % 5];
+
+            {/* ── Spiral binding — right edge ── */}
+            <div style={{
+                width: 20, flexShrink: 0,
+                background: `linear-gradient(90deg, #d6cebd, #c9c0ad)`,
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'space-around',
+                padding: '12px 0', borderLeft: `2px solid ${INK}25`,
+            }}>
+                {Array.from({ length: 18 }).map((_, i) => (
+                    <div key={i} style={{
+                        width: 13, height: 13, borderRadius: '50%',
+                        border: `1.8px solid ${INK}60`,
+                        background: PAPER,
+                        boxShadow: `inset 0 1px 2px rgba(0,0,0,0.12)`,
+                    }} />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MINIMALIST — Pure white, bold typography, large icons, breathing room
+══════════════════════════════════════════════════════════════════════════════ */
+function MinimalistRenderer({ infographic, title }) {
+    const items = infographic?.items || [];
+    const tagline = infographic?.tagline || '';
+    const stat = infographic?.stat || '';
+    const footerNote = infographic?.footer_note || '';
+    return (
+        <div style={{ background: '#fafafa', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Inter','Segoe UI',system-ui,sans-serif", overflow: 'hidden', boxSizing: 'border-box' }}>
+            {/* Header */}
+            <div style={{ background: '#111827', padding: '18px 24px 14px', flexShrink: 0, textAlign: 'center' }}>
+                <div style={{ fontSize: 24, fontWeight: 900, color: '#fff', letterSpacing: 1, textTransform: 'uppercase', lineHeight: 1.1 }}>{title}</div>
+                {tagline && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 5, letterSpacing: 0.5 }}>{tagline}</div>}
+                <div style={{ width: 40, height: 3, background: '#fff', margin: '8px auto 0', borderRadius: 2 }} />
+            </div>
+            {/* Stat bar */}
+            {stat && (
+                <div style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb', padding: '8px 24px', textAlign: 'center', flexShrink: 0 }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: '#374151', letterSpacing: 2, textTransform: 'uppercase' }}>{stat}</span>
+                </div>
+            )}
+            {/* Items grid — 2 columns */}
+            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, padding: '12px 16px', minHeight: 0 }}>
+                {items.slice(0, 6).map((item, i) => (
+                    <motion.div key={i}
+                        initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.06, type: 'spring', stiffness: 200, damping: 20 }}
+                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '12px 8px', background: '#fff', borderRadius: 10, border: '1px solid #e5e7eb', gap: 5, margin: 3 }}
+                    >
+                        <span style={{ fontSize: 22, lineHeight: 1 }}>{item.icon || '•'}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#111827', textAlign: 'center', lineHeight: 1.3 }}>{item.phrase}</span>
+                    </motion.div>
+                ))}
+            </div>
+            {/* Footer note */}
+            <div style={{ background: '#111827', padding: '8px 16px', textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 9, color: '#6b7280', letterSpacing: 1 }}>{footerNote || 'makepost.pro  •  AI-Generated'}</span>
+            </div>
+        </div>
+    );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TIMELINE — Vertical spine with colored nodes and step cards
+══════════════════════════════════════════════════════════════════════════════ */
+function TimelineRenderer({ infographic, title }) {
+    const steps = infographic?.steps || [];
+    const subtitle = infographic?.subtitle || '';
+    return (
+        <div style={{ background: '#f8fafc', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI',system-ui,sans-serif", overflow: 'hidden', boxSizing: 'border-box' }}>
+            {/* Header */}
+            <div style={{ background: 'linear-gradient(135deg,#1e293b,#334155)', padding: '14px 20px 12px', flexShrink: 0, textAlign: 'center' }}>
+                <div style={{ fontSize: 8, fontWeight: 700, color: '#94a3b8', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>TIMELINE</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: '#f1f5f9', textTransform: 'uppercase', letterSpacing: 1.5 }}>{title}</div>
+                {subtitle && <div style={{ fontSize: 9.5, color: '#64748b', marginTop: 4 }}>{subtitle}</div>}
+            </div>
+            {/* Timeline steps */}
+            <div style={{ flex: 1, padding: '10px 20px', display: 'flex', flexDirection: 'column', gap: 0, overflowY: 'hidden', minHeight: 0 }}>
+                {steps.slice(0, 5).map((step, i) => {
+                    const color = step.color || ['#E53E3E','#DD6B20','#D69E2E','#38A169','#3182CE'][i % 5];
+                    const isLast = i === steps.slice(0, 5).length - 1;
                     return (
                         <motion.div key={i}
-                            initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.06, type: 'spring', stiffness: 200 }}
-                            style={{ flex: 1, background: '#fffef5', border: '1px solid #d4c5a9', borderLeft: `4px solid ${tabColor}`, borderRadius: '0 6px 6px 0', padding: '5px 8px', display: 'flex', gap: 6, alignItems: 'stretch', minHeight: 0, overflow: 'hidden', boxSizing: 'border-box', boxShadow: '1px 2px 5px rgba(0,0,0,0.06)' }}
+                            initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.08, type: 'spring', stiffness: 180, damping: 22 }}
+                            style={{ display: 'flex', gap: 10, flex: 1, minHeight: 0 }}
                         >
-                            {/* Number circle + tier name */}
-                            <div style={{ flexShrink: 0, textAlign: 'center', minWidth: 44, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                <div style={{ width: 28, height: 28, borderRadius: '50%', background: tabColor, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', boxShadow: `0 2px 6px ${tabColor}50` }}>
-                                    <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{i + 1}</span>
+                            {/* Spine column */}
+                            <div style={{ width: 36, display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                                <div style={{ width: 34, height: 34, borderRadius: '50%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 3px 12px ${color}55`, flexShrink: 0, zIndex: 1 }}>
+                                    <span style={{ fontSize: 14, lineHeight: 1 }}>{step.icon || '●'}</span>
                                 </div>
-                                <div style={{ fontSize: 7.5, fontWeight: 700, color: tabColor, marginTop: 2, lineHeight: 1.1, maxWidth: 44, wordBreak: 'break-word' }}>{tier.name}</div>
+                                {!isLast && <div style={{ flex: 1, width: 2, background: `linear-gradient(${color},${steps[i+1]?.color || '#94a3b8'})`, opacity: 0.4, minHeight: 8 }} />}
                             </div>
-                            {/* Divider */}
-                            <div style={{ width: 1, background: '#d4c5a9', flexShrink: 0, alignSelf: 'stretch' }} />
-                            {/* Middle content */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 3, overflow: 'hidden', minWidth: 0 }}>
-                                {tier.tagline && (
-                                    <div><span style={{ fontSize: 6.5, fontWeight: 800, color: '#b0896a', fontFamily: 'system-ui', textTransform: 'uppercase', letterSpacing: 0.5 }}>What it is: </span><span style={{ fontSize: 8, color: '#3d2810' }}>{tier.tagline}</span></div>
-                                )}
-                                {(tier.use_cases || []).slice(0, 1).map((uc, j) => (
-                                    <div key={j}><span style={{ fontSize: 6.5, fontWeight: 800, color: '#2e7d32', fontFamily: 'system-ui', textTransform: 'uppercase', letterSpacing: 0.5 }}>Best for: </span><span style={{ fontSize: 8, color: '#3d2810' }}>{uc}</span></div>
-                                ))}
-                                {(tier.what_needs || []).slice(0, 1).map((wn, j) => (
-                                    <div key={j}><span style={{ fontSize: 6.5, fontWeight: 800, color: '#1565c0', fontFamily: 'system-ui', textTransform: 'uppercase', letterSpacing: 0.5 }}>Needs: </span><span style={{ fontSize: 8, color: '#3d2810' }}>{wn}</span></div>
-                                ))}
-                            </div>
-                            {/* Right badges */}
-                            <div style={{ width: 88, flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 3 }}>
-                                {(tier.key_risks || []).slice(0, 1).map((kr, j) => (
-                                    <div key={j} style={{ background: '#fff3e0', border: '1px solid #ffcc80', borderRadius: 4, padding: '3px 6px' }}>
-                                        <span style={{ fontSize: 6.5, fontWeight: 800, color: '#e65100', fontFamily: 'system-ui', textTransform: 'uppercase', display: 'block' }}>⚠ Risk</span>
-                                        <span style={{ fontSize: 7.5, color: '#5d4037', lineHeight: 1.3, display: 'block' }}>{kr}</span>
+                            {/* Content card */}
+                            <div style={{ flex: 1, paddingBottom: isLast ? 0 : 8, paddingTop: 4, minHeight: 0 }}>
+                                <div style={{ background: '#fff', borderRadius: 8, border: `1px solid ${color}30`, borderLeft: `3px solid ${color}`, padding: '7px 10px', height: 'calc(100% - 8px)', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: `0 2px 8px rgba(0,0,0,0.05)` }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                                        <span style={{ fontSize: 8.5, fontWeight: 800, color, background: `${color}18`, borderRadius: 4, padding: '1px 6px', letterSpacing: 0.5 }}>{step.marker}</span>
+                                        <span style={{ fontSize: 11, fontWeight: 800, color: '#1e293b' }}>{step.label}</span>
                                     </div>
+                                    <div style={{ fontSize: 9, color: '#475569', lineHeight: 1.4 }}>{step.desc}</div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    );
+                })}
+            </div>
+            <div style={{ padding: '5px', textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 8.5, color: '#94a3b8', letterSpacing: 1.5 }}>makepost.pro  •  AI-Generated LinkedIn Infographic</span>
+            </div>
+        </div>
+    );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   CHECKLIST — Colored section blocks with checkbox items
+══════════════════════════════════════════════════════════════════════════════ */
+function ChecklistRenderer({ infographic, title }) {
+    const sections = infographic?.sections || [];
+    const subtitle = infographic?.subtitle || `The Essential ${title} Checklist`;
+    return (
+        <div style={{ background: '#f0fdf4', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI',system-ui,sans-serif", overflow: 'hidden', boxSizing: 'border-box' }}>
+            {/* Header */}
+            <div style={{ background: 'linear-gradient(135deg,#14532d,#166534)', padding: '14px 20px 12px', flexShrink: 0, textAlign: 'center' }}>
+                <div style={{ fontSize: 8, fontWeight: 700, color: '#86efac', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>CHECKLIST</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>{title}</div>
+                <div style={{ fontSize: 9.5, color: '#bbf7d0', marginTop: 4 }}>{subtitle}</div>
+            </div>
+            {/* Sections */}
+            <div style={{ flex: 1, padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 6, minHeight: 0 }}>
+                {sections.slice(0, 4).map((section, si) => {
+                    const color = section.color || ['#E53E3E','#3182CE','#38A169','#D69E2E'][si % 4];
+                    return (
+                        <motion.div key={si}
+                            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: si * 0.07, type: 'spring', stiffness: 200, damping: 22 }}
+                            style={{ background: '#fff', borderRadius: 10, border: `1px solid ${color}25`, overflow: 'hidden', flex: 1 }}
+                        >
+                            <div style={{ background: color, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 7 }}>
+                                <span style={{ fontSize: 13, lineHeight: 1 }}>{section.icon || '✅'}</span>
+                                <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: 0.5 }}>{section.title}</span>
+                            </div>
+                            <div style={{ padding: '5px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                {(section.items || []).slice(0, 3).map((item, ii) => (
+                                    <motion.div key={ii}
+                                        initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: si * 0.07 + ii * 0.04 }}
+                                        style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}
+                                    >
+                                        <div style={{ width: 14, height: 14, border: `2px solid ${color}`, borderRadius: 3, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${color}15` }}>
+                                            <Check size={8} color={color} strokeWidth={3} />
+                                        </div>
+                                        <span style={{ fontSize: 9.5, color: '#374151', lineHeight: 1.4 }}>{item}</span>
+                                    </motion.div>
                                 ))}
-                                {tier.insight && (
-                                    <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 4, padding: '3px 6px' }}>
-                                        <span style={{ fontSize: 6.5, fontWeight: 800, color: '#2e7d32', fontFamily: 'system-ui', textTransform: 'uppercase', display: 'block' }}>✓ Tip</span>
-                                        <span style={{ fontSize: 7.5, color: '#1b5e20', lineHeight: 1.3, display: 'block' }}>{tier.insight}</span>
+                            </div>
+                        </motion.div>
+                    );
+                })}
+            </div>
+            <div style={{ padding: '5px', textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 8.5, color: '#6b7280', letterSpacing: 1.5 }}>makepost.pro  •  AI-Generated LinkedIn Infographic</span>
+            </div>
+        </div>
+    );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   STEP-BY-STEP PROCESS — Numbered flowing steps with tips
+══════════════════════════════════════════════════════════════════════════════ */
+function StepByStepRenderer({ infographic, title }) {
+    const steps = infographic?.steps || [];
+    const subtitle = infographic?.subtitle || '';
+    return (
+        <div style={{ background: '#fefce8', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI',system-ui,sans-serif", overflow: 'hidden', boxSizing: 'border-box' }}>
+            {/* Header */}
+            <div style={{ background: 'linear-gradient(135deg,#78350f,#92400e)', padding: '14px 20px 12px', flexShrink: 0, textAlign: 'center' }}>
+                <div style={{ fontSize: 8, fontWeight: 700, color: '#fcd34d', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>STEP-BY-STEP</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>{title}</div>
+                {subtitle && <div style={{ fontSize: 9.5, color: '#fde68a', marginTop: 4 }}>{subtitle}</div>}
+            </div>
+            {/* Steps */}
+            <div style={{ flex: 1, padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 5, minHeight: 0 }}>
+                {steps.slice(0, 6).map((step, i) => {
+                    const color = step.color || ['#E53E3E','#DD6B20','#D69E2E','#38A169','#3182CE','#7B2D8B'][i % 6];
+                    return (
+                        <motion.div key={i}
+                            initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.07, type: 'spring', stiffness: 180, damping: 20 }}
+                            style={{ flex: 1, display: 'flex', gap: 8, alignItems: 'stretch', minHeight: 0 }}
+                        >
+                            {/* Step number badge */}
+                            <div style={{ width: 32, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                                <div style={{ width: 32, height: 32, borderRadius: '50%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 3px 10px ${color}50`, flexShrink: 0 }}>
+                                    <span style={{ fontSize: 13, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{step.num || i+1}</span>
+                                </div>
+                                {i < steps.slice(0,6).length - 1 && <div style={{ flex: 1, width: 2, background: '#e5e7eb', borderRadius: 1, minHeight: 4 }} />}
+                            </div>
+                            {/* Content */}
+                            <div style={{ flex: 1, background: '#fff', borderRadius: 8, border: `1px solid ${color}20`, padding: '6px 10px', display: 'flex', gap: 8, alignItems: 'center', boxShadow: '0 1px 6px rgba(0,0,0,0.05)', minHeight: 0 }}>
+                                <span style={{ fontSize: 18, flexShrink: 0 }}>{step.icon || '→'}</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: color }}>{step.title}</div>
+                                    <div style={{ fontSize: 8.5, color: '#374151', lineHeight: 1.3, marginTop: 1 }}>{step.detail}</div>
+                                </div>
+                                {step.tip && (
+                                    <div style={{ background: `${color}12`, border: `1px solid ${color}25`, borderRadius: 5, padding: '3px 6px', flexShrink: 0, maxWidth: 90 }}>
+                                        <div style={{ fontSize: 7, fontWeight: 800, color, letterSpacing: 0.3, textTransform: 'uppercase' }}>PRO TIP</div>
+                                        <div style={{ fontSize: 7.5, color: '#4b5563', lineHeight: 1.3 }}>{step.tip}</div>
                                     </div>
                                 )}
                             </div>
@@ -473,8 +868,421 @@ function HandwrittenRenderer({ infographic, title }) {
                     );
                 })}
             </div>
-            <div style={{ padding: '5px 60px', textAlign: 'right', flexShrink: 0, position: 'relative' }}>
-                <span style={{ fontSize: 7.5, color: '#b0896a', letterSpacing: 1 }}>makepost.pro  •  study notes series</span>
+            <div style={{ padding: '5px', textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 8.5, color: '#92400e', opacity: 0.6, letterSpacing: 1.5 }}>makepost.pro  •  AI-Generated LinkedIn Infographic</span>
+            </div>
+        </div>
+    );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   COMPARISON TABLE — 3-column table with colored headers + verdict row
+══════════════════════════════════════════════════════════════════════════════ */
+function ComparisonRenderer({ infographic, title }) {
+    const columns = infographic?.columns || [];
+    const columnColors = infographic?.column_colors || ['#E53E3E','#3182CE','#38A169'];
+    const columnIcons = infographic?.column_icons || ['⚡','🔧','🎯'];
+    const rows = infographic?.rows || [];
+    const verdict = infographic?.verdict || '';
+    return (
+        <div style={{ background: '#f8fafc', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI',system-ui,sans-serif", overflow: 'hidden', boxSizing: 'border-box' }}>
+            {/* Header */}
+            <div style={{ background: 'linear-gradient(135deg,#1e3a5f,#1e40af)', padding: '14px 20px 12px', flexShrink: 0, textAlign: 'center' }}>
+                <div style={{ fontSize: 8, fontWeight: 700, color: '#93c5fd', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>COMPARISON</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>{title}</div>
+                <div style={{ fontSize: 9.5, color: '#bfdbfe', marginTop: 4 }}>{infographic?.subtitle || `Side-by-side breakdown`}</div>
+            </div>
+            {/* Column headers */}
+            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 1fr', background: '#1e293b', flexShrink: 0 }}>
+                <div style={{ padding: '6px 8px', fontSize: 7.5, fontWeight: 700, color: '#64748b', letterSpacing: 1, textTransform: 'uppercase', textAlign: 'center', alignSelf: 'center' }}>Criteria</div>
+                {columns.slice(0, 3).map((col, ci) => (
+                    <div key={ci} style={{ padding: '7px 6px', textAlign: 'center', borderLeft: '1px solid #334155' }}>
+                        <div style={{ fontSize: 14 }}>{columnIcons[ci] || '●'}</div>
+                        <div style={{ fontSize: 9.5, fontWeight: 800, color: columnColors[ci] || '#fff', marginTop: 2, lineHeight: 1.2 }}>{col}</div>
+                    </div>
+                ))}
+            </div>
+            {/* Data rows */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                {rows.slice(0, 6).map((row, ri) => (
+                    <motion.div key={ri}
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        transition={{ delay: ri * 0.055 }}
+                        style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 1fr', flex: 1, borderBottom: '1px solid #e2e8f0', background: ri % 2 === 0 ? '#fff' : '#f8fafc', minHeight: 0 }}
+                    >
+                        <div style={{ padding: '5px 8px', fontSize: 9, fontWeight: 700, color: '#374151', alignSelf: 'center', lineHeight: 1.3, textAlign: 'center' }}>{row.criterion}</div>
+                        {(row.values || []).slice(0, 3).map((val, vi) => (
+                            <div key={vi} style={{ padding: '5px 8px', fontSize: 9, color: '#475569', lineHeight: 1.35, alignSelf: 'center', borderLeft: `1px solid #e2e8f0`, borderTop: `2px solid ${columnColors[vi] || '#e2e8f0'}`, textAlign: 'center' }}>
+                                {val}
+                            </div>
+                        ))}
+                    </motion.div>
+                ))}
+            </div>
+            {/* Verdict row */}
+            {verdict && (
+                <div style={{ background: '#1e3a5f', padding: '7px 14px', textAlign: 'center', flexShrink: 0 }}>
+                    <span style={{ fontSize: 8.5, fontWeight: 700, color: '#93c5fd', letterSpacing: 0.5 }}>VERDICT: </span>
+                    <span style={{ fontSize: 8.5, color: '#e2e8f0' }}>{verdict}</span>
+                </div>
+            )}
+            <div style={{ padding: '4px', textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 8, color: '#94a3b8', letterSpacing: 1.5 }}>makepost.pro  •  AI-Generated LinkedIn Infographic</span>
+            </div>
+        </div>
+    );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FLOWCHART — Vertical decision flow: pill start → process boxes → diamond
+   decision → two path cards side-by-side → pill end
+══════════════════════════════════════════════════════════════════════════════ */
+function FlowchartRenderer({ infographic, title }) {
+    const nodes = infographic?.nodes || [];
+    const subtitle = infographic?.subtitle || '';
+
+    const start   = nodes.find(n => n.shape === 'start')   || nodes[0];
+    const procs   = nodes.filter(n => n.shape === 'process');
+    const dec     = nodes.find(n => n.shape === 'decision') || nodes[2];
+    const pathA   = procs.find((n, i) => i === procs.length - 2) || procs[procs.length - 2];
+    const pathB   = procs.find((n, i) => i === procs.length - 1) || procs[procs.length - 1];
+    const end     = nodes.find(n => n.shape === 'end')     || nodes[nodes.length - 1];
+    const midProcs = procs.filter(n => n !== pathA && n !== pathB);
+
+    const Connector = ({ color = '#94a3b8' }) => (
+        <div style={{ display: 'flex', justifyContent: 'center', height: 20, flexShrink: 0 }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <line x1="10" y1="0" x2="10" y2="14" stroke={color} strokeWidth="1.8" />
+                <path d="M5 10 L10 16 L15 10" stroke={color} strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+            </svg>
+        </div>
+    );
+
+    const NodeBox = ({ node, delay = 0, shape = 'rect' }) => {
+        if (!node) return null;
+        const c = node.color || '#6366f1';
+        if (shape === 'pill') return (
+            <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay, type: 'spring', stiffness: 200, damping: 18 }}
+                style={{ background: c, borderRadius: 30, padding: '7px 20px', textAlign: 'center', flexShrink: 0, boxShadow: `0 4px 14px ${c}55` }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: 0.5 }}>{node.label}</div>
+                {node.detail && <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.82)', marginTop: 2 }}>{node.detail}</div>}
+            </motion.div>
+        );
+        if (shape === 'diamond') return (
+            <motion.div initial={{ opacity: 0, rotate: -4, scale: 0.85 }} animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                transition={{ delay, type: 'spring', stiffness: 180, damping: 16 }}
+                style={{ position: 'relative', alignSelf: 'center', flexShrink: 0 }}>
+                <div style={{ width: 120, height: 60, background: c, transform: 'perspective(200px) rotateX(8deg)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: `0 6px 20px ${c}50`, border: `2px solid ${c}` }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 800, color: '#fff', textAlign: 'center', padding: '0 8px' }}>{node.label}</div>
+                    {node.detail && <div style={{ fontSize: 7.5, color: 'rgba(255,255,255,0.82)', textAlign: 'center', marginTop: 2, padding: '0 6px' }}>{node.detail}</div>}
+                </div>
+                {/* YES / NO labels */}
+                {node.yes_label && <div style={{ position: 'absolute', right: -38, top: '50%', transform: 'translateY(-50%)', fontSize: 8, fontWeight: 700, color: '#10b981', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap' }}>{node.yes_label}</div>}
+                {node.no_label  && <div style={{ position: 'absolute', bottom: -16, left: '50%', transform: 'translateX(-50%)', fontSize: 8, fontWeight: 700, color: '#f97316', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap' }}>{node.no_label}</div>}
+            </motion.div>
+        );
+        // default: rect
+        return (
+            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay, type: 'spring', stiffness: 200, damping: 20 }}
+                style={{ background: '#fff', border: `2px solid ${c}`, borderLeft: `5px solid ${c}`, borderRadius: 10, padding: '8px 14px', flexShrink: 0, boxShadow: `0 2px 10px ${c}25` }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: c }}>{node.label}</div>
+                {node.detail && <div style={{ fontSize: 8.5, color: '#475569', marginTop: 3, lineHeight: 1.4 }}>{node.detail}</div>}
+            </motion.div>
+        );
+    };
+
+    return (
+        <div style={{ background: 'linear-gradient(160deg,#f5f3ff 0%,#eef2ff 100%)', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI',system-ui,sans-serif", overflow: 'hidden', boxSizing: 'border-box' }}>
+            {/* Header */}
+            <div style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)', padding: '13px 20px 11px', flexShrink: 0, textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.07)' }} />
+                <div style={{ fontSize: 8, fontWeight: 700, color: '#c7d2fe', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 3 }}>FLOWCHART</div>
+                <div style={{ fontSize: 19, fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>{title}</div>
+                {subtitle && <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', marginTop: 3 }}>{subtitle}</div>}
+            </div>
+
+            {/* Flow body */}
+            <div style={{ flex: 1, padding: '10px 20px 8px', display: 'flex', flexDirection: 'column', alignItems: 'stretch', minHeight: 0, overflowY: 'hidden', gap: 0 }}>
+                {start && <><NodeBox node={start} shape="pill" delay={0} /><Connector color={start.color} /></>}
+                {midProcs.slice(0, 1).map((n, i) => (
+                    <React.Fragment key={i}><NodeBox node={n} shape="rect" delay={0.1 + i * 0.08} /><Connector color={n.color} /></React.Fragment>
+                ))}
+                {dec && (
+                    <>
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <NodeBox node={dec} shape="diamond" delay={0.22} />
+                        </div>
+                        {/* Branch arrows */}
+                        <div style={{ display: 'flex', gap: 8, height: 22, flexShrink: 0, position: 'relative' }}>
+                            <svg width="100%" height="22" style={{ position: 'absolute', inset: 0 }} preserveAspectRatio="none">
+                                <motion.path d="M50%,0 L25%,22" stroke="#10b981" strokeWidth="1.6" fill="none"
+                                    initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.32, duration: 0.4 }} />
+                                <motion.path d="M50%,0 L75%,22" stroke="#f97316" strokeWidth="1.6" fill="none"
+                                    initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.32, duration: 0.4 }} />
+                            </svg>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                            <NodeBox node={pathA} shape="rect" delay={0.38} />
+                            <NodeBox node={pathB} shape="rect" delay={0.44} />
+                        </div>
+                        <Connector color="#6366f1" />
+                    </>
+                )}
+                {end && <NodeBox node={end} shape="pill" delay={0.55} />}
+            </div>
+
+            <div style={{ padding: '4px', textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 8, color: '#818cf8', letterSpacing: 1.5 }}>makepost.pro  •  AI-Generated Flowchart</span>
+            </div>
+        </div>
+    );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   STATISTICS — Dark navy, hero big number, animated progress bars, 2×2 stat grid
+══════════════════════════════════════════════════════════════════════════════ */
+function StatisticsRenderer({ infographic, title }) {
+    const hero = infographic?.hero_stat || {};
+    const stats = infographic?.stats || [];
+    const insight = infographic?.insight || '';
+    const sourceLine = infographic?.source_line || '';
+
+    return (
+        <div style={{ background: '#0f172a', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI',system-ui,sans-serif", overflow: 'hidden', boxSizing: 'border-box', color: '#f1f5f9' }}>
+            {/* Header */}
+            <div style={{ padding: '12px 20px 10px', flexShrink: 0, textAlign: 'center', borderBottom: '1px solid rgba(99,102,241,0.25)', position: 'relative' }}>
+                <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 120%, rgba(99,102,241,0.18), transparent 70%)', pointerEvents: 'none' }} />
+                <div style={{ fontSize: 8, fontWeight: 700, color: '#818cf8', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 3 }}>STATISTICS</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>{title}</div>
+            </div>
+
+            {/* Hero stat */}
+            <div style={{ padding: '14px 20px 10px', textAlign: 'center', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'relative' }}>
+                <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 50%, rgba(99,102,241,0.12), transparent 65%)', pointerEvents: 'none' }} />
+                <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 16, delay: 0.05 }}>
+                    <div style={{ fontSize: 48, fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: -2, textShadow: '0 0 40px rgba(99,102,241,0.8)' }}>{hero.value || '—'}</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 5, lineHeight: 1.4 }}>{hero.label}</div>
+                    {hero.source && <div style={{ fontSize: 9, color: '#475569', marginTop: 4, fontStyle: 'italic' }}>{hero.source}</div>}
+                </motion.div>
+            </div>
+
+            {/* 2×2 Stat grid */}
+            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: '8px 12px', minHeight: 0 }}>
+                {stats.slice(0, 4).map((stat, i) => {
+                    const pct = Math.min(95, Math.max(5, parseInt(stat.bar_pct) || 50));
+                    const c = stat.color || '#6366f1';
+                    return (
+                        <motion.div key={i}
+                            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.12 + i * 0.09, type: 'spring', stiffness: 200, damping: 20 }}
+                            style={{ background: '#1e293b', borderRadius: 10, border: `1px solid ${c}30`, borderTop: `3px solid ${c}`, padding: '9px 10px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden', minHeight: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 4 }}>
+                                <span style={{ fontSize: 16, lineHeight: 1, flexShrink: 0 }}>{stat.icon || '📊'}</span>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: 18, fontWeight: 900, color: c, lineHeight: 1 }}>{stat.value}</div>
+                                    <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', marginTop: 2, lineHeight: 1.3 }}>{stat.label}</div>
+                                </div>
+                            </div>
+                            {stat.detail && <div style={{ fontSize: 8, color: '#64748b', lineHeight: 1.35, marginBottom: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{stat.detail}</div>}
+                            {/* Animated progress bar */}
+                            <div style={{ background: '#334155', borderRadius: 4, height: 5, overflow: 'hidden', flexShrink: 0 }}>
+                                <motion.div initial={{ width: '0%' }} animate={{ width: `${pct}%` }}
+                                    transition={{ delay: 0.3 + i * 0.1, duration: 0.75, ease: 'easeOut' }}
+                                    style={{ height: '100%', background: `linear-gradient(90deg, ${c}, ${c}bb)`, borderRadius: 4 }} />
+                            </div>
+                        </motion.div>
+                    );
+                })}
+            </div>
+
+            {/* Insight strip */}
+            {insight && (
+                <div style={{ padding: '7px 16px', background: 'rgba(99,102,241,0.12)', borderTop: '1px solid rgba(99,102,241,0.2)', flexShrink: 0 }}>
+                    <div style={{ fontSize: 9.5, color: '#c7d2fe', textAlign: 'center', lineHeight: 1.5, fontStyle: 'italic' }}>💡 {insight}</div>
+                </div>
+            )}
+            <div style={{ padding: '4px', textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 7.5, color: '#334155', letterSpacing: 1 }}>{sourceLine || 'makepost.pro  •  AI-Generated Statistics'}</span>
+            </div>
+        </div>
+    );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ROADMAP — 4 phases on a vertical spine, milestone bullets, outcome badges,
+   end-goal trophy banner
+══════════════════════════════════════════════════════════════════════════════ */
+function RoadmapRenderer({ infographic, title }) {
+    const phases = infographic?.phases || [];
+    const endGoal = infographic?.end_goal || '';
+    const subtitle = infographic?.subtitle || '';
+
+    return (
+        <div style={{ background: '#fffbeb', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI',system-ui,sans-serif", overflow: 'hidden', boxSizing: 'border-box' }}>
+            {/* Header */}
+            <div style={{ background: 'linear-gradient(135deg,#78350f,#d97706)', padding: '12px 20px 10px', flexShrink: 0, textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', bottom: -18, right: -18, width: 70, height: 70, borderRadius: '50%', background: 'rgba(255,255,255,0.07)' }} />
+                <div style={{ fontSize: 8, fontWeight: 700, color: '#fde68a', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 3 }}>ROADMAP</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>{title}</div>
+                {subtitle && <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', marginTop: 3 }}>{subtitle}</div>}
+            </div>
+
+            {/* Phases */}
+            <div style={{ flex: 1, padding: '8px 14px 6px', display: 'flex', flexDirection: 'column', gap: 6, minHeight: 0 }}>
+                {phases.slice(0, 4).map((phase, i) => {
+                    const c = phase.color || '#d97706';
+                    const isLast = i === phases.slice(0, 4).length - 1;
+                    return (
+                        <motion.div key={i}
+                            initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.09, type: 'spring', stiffness: 180, damping: 20 }}
+                            style={{ display: 'flex', gap: 10, flex: 1, minHeight: 0 }}>
+                            {/* Left spine */}
+                            <div style={{ width: 36, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                                    transition={{ delay: 0.05 + i * 0.09, type: 'spring', stiffness: 280, damping: 16 }}
+                                    style={{ width: 34, height: 34, borderRadius: '50%', background: c, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 3px 12px ${c}60`, zIndex: 1 }}>
+                                    <span style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{phase.phase_num}</span>
+                                </motion.div>
+                                {!isLast && (
+                                    <motion.div initial={{ scaleY: 0 }} animate={{ scaleY: 1 }}
+                                        transition={{ delay: 0.2 + i * 0.09, duration: 0.35, ease: 'easeOut' }}
+                                        style={{ flex: 1, width: 3, background: `linear-gradient(${c}, ${phases[i + 1]?.color || '#94a3b8'})`, borderRadius: 2, originY: 0, opacity: 0.6 }} />
+                                )}
+                            </div>
+
+                            {/* Phase card */}
+                            <div style={{ flex: 1, background: phase.bg_color || '#fff', borderRadius: 10, border: `1px solid ${c}25`, borderLeft: `3px solid ${c}`, padding: '7px 10px', display: 'flex', flexDirection: 'column', gap: 3, overflow: 'hidden', boxShadow: `0 2px 8px ${c}12` }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, flexShrink: 0 }}>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: '#1e293b' }}>{phase.phase_name}</div>
+                                    <span style={{ fontSize: 8.5, fontWeight: 700, color: c, background: `${c}18`, borderRadius: 10, padding: '2px 7px', flexShrink: 0 }}>{phase.duration}</span>
+                                </div>
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2.5, minHeight: 0 }}>
+                                    {(phase.milestones || []).slice(0, 3).map((m, mi) => (
+                                        <motion.div key={mi}
+                                            initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: 0.18 + i * 0.09 + mi * 0.04 }}
+                                            style={{ display: 'flex', alignItems: 'flex-start', gap: 5 }}>
+                                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: c, flexShrink: 0, marginTop: 4 }} />
+                                            <span style={{ fontSize: 9, color: '#374151', lineHeight: 1.35 }}>{m}</span>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                                {phase.outcome && (
+                                    <div style={{ background: `${c}12`, border: `1px solid ${c}28`, borderRadius: 5, padding: '3px 7px', flexShrink: 0 }}>
+                                        <span style={{ fontSize: 8, fontWeight: 700, color: c }}>✓ </span>
+                                        <span style={{ fontSize: 8, color: '#374151' }}>{phase.outcome}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    );
+                })}
+            </div>
+
+            {/* End goal banner */}
+            {endGoal && (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+                    style={{ background: 'linear-gradient(135deg,#78350f,#d97706)', padding: '8px 16px', textAlign: 'center', flexShrink: 0 }}>
+                    <div style={{ fontSize: 9.5, color: '#fef3c7', fontWeight: 700 }}>🏆 {endGoal}</div>
+                </motion.div>
+            )}
+            <div style={{ padding: '3px', textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 8, color: '#92400e', opacity: 0.5, letterSpacing: 1 }}>makepost.pro  •  AI-Generated Roadmap</span>
+            </div>
+        </div>
+    );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PROBLEM–SOLUTION — Split-card rows: red problem left, green solution right,
+   impact chip below, diagonal header, CTA banner footer
+══════════════════════════════════════════════════════════════════════════════ */
+function ProblemSolutionRenderer({ infographic, title }) {
+    const pairs = infographic?.pairs || [];
+    const ctaBanner = infographic?.cta_banner || '';
+    const subtitle = infographic?.subtitle || '';
+
+    return (
+        <div style={{ background: '#f9fafb', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI',system-ui,sans-serif", overflow: 'hidden', boxSizing: 'border-box' }}>
+            {/* Split diagonal header */}
+            <div style={{ display: 'flex', flexShrink: 0, height: 68, position: 'relative', overflow: 'hidden' }}>
+                {/* Left (problem) */}
+                <div style={{ flex: 1, background: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', clipPath: 'polygon(0 0, 105% 0, 92% 100%, 0 100%)', paddingRight: 24 }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 9, fontWeight: 800, color: '#fca5a5', letterSpacing: 2, textTransform: 'uppercase' }}>PROBLEM</div>
+                        <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>😤 Pain Points</div>
+                    </div>
+                </div>
+                {/* Right (solution) */}
+                <div style={{ flex: 1, background: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', clipPath: 'polygon(8% 0, 100% 0, 100% 100%, -5% 100%)', paddingLeft: 24 }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 9, fontWeight: 800, color: '#a7f3d0', letterSpacing: 2, textTransform: 'uppercase' }}>SOLUTION</div>
+                        <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>✅ Fixes</div>
+                    </div>
+                </div>
+                {/* Center badge */}
+                <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 28, height: 28, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.2)', zIndex: 10, border: '2px solid #f3f4f6' }}>
+                    <span style={{ fontSize: 10, fontWeight: 900, color: '#374151' }}>VS</span>
+                </div>
+                {/* Title below */}
+                <div style={{ position: 'absolute', bottom: 3, left: 0, right: 0, textAlign: 'center' }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.8)', background: 'rgba(0,0,0,0.25)', display: 'inline-block', padding: '1px 12px', borderRadius: 10 }}>{title}</div>
+                </div>
+            </div>
+
+            {/* Pair rows */}
+            <div style={{ flex: 1, padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 6, minHeight: 0 }}>
+                {pairs.slice(0, 4).map((pair, i) => (
+                    <motion.div key={i}
+                        initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.08, type: 'spring', stiffness: 200, damping: 20 }}
+                        style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0, minHeight: 0 }}>
+                        {/* Two-col split */}
+                        <div style={{ flex: 1, display: 'flex', gap: 0, minHeight: 0, borderRadius: 8, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+                            {/* Problem */}
+                            <div style={{ flex: 1, background: '#fef2f2', padding: '6px 8px', borderRight: '2px solid #fecaca', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+                                    <span style={{ fontSize: 14, lineHeight: 1, flexShrink: 0 }}>{pair.problem_icon || '⚠️'}</span>
+                                    <span style={{ fontSize: 9, color: '#991b1b', lineHeight: 1.35, fontWeight: 600 }}>{pair.problem}</span>
+                                </div>
+                            </div>
+                            {/* Arrow divider */}
+                            <div style={{ width: 26, flexShrink: 0, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                                    transition={{ delay: 0.15 + i * 0.08, type: 'spring', stiffness: 300, damping: 14 }}
+                                    style={{ fontSize: 14, color: '#6b7280' }}>→</motion.div>
+                            </div>
+                            {/* Solution */}
+                            <div style={{ flex: 1, background: '#f0fdf4', padding: '6px 8px', borderLeft: '2px solid #a7f3d0', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+                                    <span style={{ fontSize: 14, lineHeight: 1, flexShrink: 0 }}>{pair.solution_icon || '✅'}</span>
+                                    <span style={{ fontSize: 9, color: '#065f46', lineHeight: 1.35, fontWeight: 600 }}>{pair.solution}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Impact chip */}
+                        {pair.impact && (
+                            <div style={{ background: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.18)', borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '2px 10px', textAlign: 'center' }}>
+                                <span style={{ fontSize: 8, color: '#047857', fontWeight: 700 }}>✦ {pair.impact}</span>
+                            </div>
+                        )}
+                    </motion.div>
+                ))}
+            </div>
+
+            {/* CTA banner */}
+            {ctaBanner && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+                    style={{ background: 'linear-gradient(135deg,#1e293b,#334155)', padding: '8px 16px', textAlign: 'center', flexShrink: 0 }}>
+                    <div style={{ fontSize: 9.5, color: '#f1f5f9', fontWeight: 700 }}>🚀 {ctaBanner}</div>
+                </motion.div>
+            )}
+            <div style={{ padding: '3px', textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 8, color: '#94a3b8', letterSpacing: 1 }}>makepost.pro  •  AI-Generated Infographic</span>
             </div>
         </div>
     );
@@ -482,12 +1290,24 @@ function HandwrittenRenderer({ infographic, title }) {
 
 function InfographicRenderer({ content, title, style = 'Whiteboard' }) {
     const infographic = content?.infographic;
+    const infType = infographic?.type;
     const categories = infographic?.categories || [];
+
+    // New structured styles — route by infographic.type
+    if (infType === 'minimalist'       || style === 'Minimalist')        return <MinimalistRenderer       infographic={infographic} title={title} />;
+    if (infType === 'timeline'         || style === 'Timeline')          return <TimelineRenderer         infographic={infographic} title={title} />;
+    if (infType === 'checklist'        || style === 'Checklist')         return <ChecklistRenderer        infographic={infographic} title={title} />;
+    if (infType === 'steps'            || style === 'Step-by-Step')      return <StepByStepRenderer       infographic={infographic} title={title} />;
+    if (infType === 'comparison'       || style === 'Comparison Table')  return <ComparisonRenderer       infographic={infographic} title={title} />;
+    if (infType === 'flowchart'        || style === 'Flowchart')         return <FlowchartRenderer        infographic={infographic} title={title} />;
+    if (infType === 'statistics'       || style === 'Statistics')        return <StatisticsRenderer       infographic={infographic} title={title} />;
+    if (infType === 'roadmap'          || style === 'Roadmap')           return <RoadmapRenderer          infographic={infographic} title={title} />;
+    if (infType === 'problem_solution' || style === 'Problem-Solution')  return <ProblemSolutionRenderer  infographic={infographic} title={title} />;
 
     if (!categories.length) {
         const bgs = { 'Whiteboard': '#fff', 'Corporate Modern': '#eef4ff', 'Executive Guide': '#0d1117', 'Handwritten Notes': '#fdf6e3' };
-        const fg = { 'Whiteboard': '#1a1a2e', 'Corporate Modern': '#1e3a5f', 'Executive Guide': '#c9d1d9', 'Handwritten Notes': '#3d2008' };
-        const ff = { 'Handwritten Notes': "'Comic Sans MS',cursive" };
+        const fg  = { 'Whiteboard': '#1a1a2e', 'Corporate Modern': '#1e3a5f', 'Executive Guide': '#c9d1d9', 'Handwritten Notes': '#3d2008' };
+        const ff  = { 'Handwritten Notes': "'Comic Sans MS',cursive" };
         return (
             <div style={{ fontFamily: ff[style] || 'system-ui', lineHeight: 1.8, background: bgs[style] || '#fff', padding: 20, borderRadius: 14, border: '1px solid #e2e8f0' }}>
                 <p style={{ fontSize: 15, fontWeight: 700, color: fg[style] || '#1a1a2e', marginBottom: 10 }}>{content?.hook}</p>
@@ -514,6 +1334,14 @@ export default function GeneratorPage() {
     const [infographicStyle, setInfographicStyle] = useState('Whiteboard');
     const [lastGeneratedStyle, setLastGeneratedStyle] = useState(null);
     const [showPostDetails, setShowPostDetails] = useState(true);
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const onResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
     const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
     const [toneDropdownOpen, setToneDropdownOpen] = useState(false);
     const [result, setResult] = useState(null);
@@ -527,10 +1355,19 @@ export default function GeneratorPage() {
 
 
     const STYLES = [
-        { id: 'Whiteboard', label: 'Whiteboard Sketch', Icon: Palette, desc: 'Hand-drawn marker style' },
-        { id: 'Corporate Modern', label: 'Corporate Modern', Icon: FileText, desc: 'Clean, professional digital' },
-        { id: 'Executive Guide', label: 'Executive Guide', Icon: Zap, desc: 'Stacked vibrant guide' },
-        { id: 'Handwritten Notes', label: 'Handwritten Notes', Icon: MessageSquare, desc: 'Pen on notebook paper' },
+        { id: 'Whiteboard',       label: 'Whiteboard Sketch',  Icon: Palette,      desc: 'Hand-drawn marker style',       color: '#2563eb', bg: '#eff6ff' },
+        { id: 'Corporate Modern', label: 'Corporate Modern',   Icon: FileText,     desc: 'Clean, professional digital',   color: '#0f766e', bg: '#f0fdfa' },
+        { id: 'Executive Guide',  label: 'Executive Guide',    Icon: Zap,          desc: 'Stacked vibrant guide',         color: '#7c3aed', bg: '#f5f3ff' },
+        { id: 'Handwritten Notes',label: 'Handwritten Notes',  Icon: MessageSquare,desc: 'Pen on notebook paper',         color: '#c54444', bg: '#fef2f2' },
+        { id: 'Minimalist',       label: 'Minimalist',         Icon: Target,       desc: 'Bold, breathing white space',   color: '#111827', bg: '#f3f4f6' },
+        { id: 'Timeline',         label: 'Timeline',           Icon: Hash,         desc: 'Progression & milestones',      color: '#1e293b', bg: '#f1f5f9' },
+        { id: 'Checklist',        label: 'Checklist',          Icon: Check,        desc: 'Action-item checkboxes',        color: '#166534', bg: '#f0fdf4' },
+        { id: 'Step-by-Step',     label: 'Step-by-Step',       Icon: ChevronDown,  desc: 'Sequential numbered process',   color: '#92400e', bg: '#fefce8' },
+        { id: 'Comparison Table', label: 'Comparison Table',   Icon: Copy,         desc: 'Side-by-side breakdown',        color: '#1e3a5f', bg: '#eff6ff' },
+        { id: 'Flowchart',        label: 'Flowchart',          Icon: GitBranch,    desc: 'Decision flow & logic paths',   color: '#4f46e5', bg: '#eef2ff' },
+        { id: 'Statistics',       label: 'Statistics',         Icon: BarChart2,    desc: 'Bold numbers & data story',     color: '#059669', bg: '#ecfdf5' },
+        { id: 'Roadmap',          label: 'Roadmap',            Icon: Map,          desc: 'Phased milestones & goals',     color: '#d97706', bg: '#fffbeb' },
+        { id: 'Problem-Solution', label: 'Problem–Solution',   Icon: Lightbulb,    desc: 'Pain points vs. fixes',         color: '#dc2626', bg: '#fef2f2' },
     ];
 
     const TONES = ['Professional', 'Casual', 'Inspirational', 'Educational', 'Humorous', 'Formal', 'Conversational', 'Storytelling', 'Data-Driven', 'Motivational'];
@@ -640,7 +1477,24 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
 
     return (
         <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f3f4f6' }}>
-            <Sidebar onNewPost={handleNewPost} onSelectHistory={loadHistoryItem} currentHistoryId={currentHistoryId} />
+            {/* Desktop sidebar — hidden on mobile */}
+            {!isMobile && (
+                <Sidebar
+                    onNewPost={handleNewPost}
+                    onSelectHistory={loadHistoryItem}
+                    currentHistoryId={currentHistoryId}
+                />
+            )}
+            {/* Mobile drawer sidebar */}
+            {isMobile && (
+                <Sidebar
+                    onNewPost={handleNewPost}
+                    onSelectHistory={loadHistoryItem}
+                    currentHistoryId={currentHistoryId}
+                    mobileOpen={mobileSidebarOpen}
+                    onMobileClose={() => setMobileSidebarOpen(false)}
+                />
+            )}
 
             {/* No Credits Modal */}
             <AnimatePresence>
@@ -661,9 +1515,10 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                             exit={{ scale: 0.9, opacity: 0 }}
                             onClick={e => e.stopPropagation()}
                             style={{
-                                background: 'white', borderRadius: 28, padding: 40,
+                                background: 'white', borderRadius: 24, padding: isMobile ? 24 : 40,
                                 maxWidth: 420, width: '100%', textAlign: 'center',
-                                boxShadow: '0 25px 60px rgba(0,0,0,0.2)'
+                                boxShadow: '0 25px 60px rgba(0,0,0,0.2)',
+                                margin: isMobile ? '0 12px' : 0,
                             }}
                         >
                             <div style={{ fontSize: 56, marginBottom: 16 }}>⚡</div>
@@ -694,12 +1549,49 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                 )}
             </AnimatePresence>
 
-            <main style={{ flex: 1, overflowY: 'auto' }}>
-                <div style={{ padding: '28px 32px', maxWidth: 1200, margin: '0 auto' }}>
+            <main style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
 
+                {/* ── Mobile top bar ── */}
+                {isMobile && (
+                    <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '12px 16px', background: '#fff',
+                        borderBottom: '1px solid #e2e8f0', flexShrink: 0,
+                        position: 'sticky', top: 0, zIndex: 100,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    }}>
+                        {/* Hamburger */}
+                        <button
+                            onClick={() => setMobileSidebarOpen(true)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', display: 'flex', flexDirection: 'column', gap: 4 }}
+                        >
+                            <span style={{ width: 20, height: 2, background: '#374151', borderRadius: 2, display: 'block' }} />
+                            <span style={{ width: 20, height: 2, background: '#374151', borderRadius: 2, display: 'block' }} />
+                            <span style={{ width: 14, height: 2, background: '#374151', borderRadius: 2, display: 'block' }} />
+                        </button>
 
+                        {/* Logo text */}
+                        <span style={{ fontSize: 16, fontWeight: 900, color: '#c54444', letterSpacing: 0.5 }}>makepost<span style={{ color: '#374151' }}>.pro</span></span>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: 24, alignItems: 'start' }}>
+                        {/* Credits chip */}
+                        <button
+                            onClick={() => navigate('/pricing')}
+                            style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 20, padding: '4px 10px', cursor: 'pointer' }}
+                        >
+                            <Zap size={12} color="#c54444" />
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#c54444' }}>{credits ?? '…'}</span>
+                        </button>
+                    </div>
+                )}
+
+                <div style={{ padding: isMobile ? '16px 12px' : '28px 32px', maxWidth: 1200, margin: '0 auto', width: '100%', flex: 1 }}>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: isMobile ? '1fr' : '340px 1fr',
+                        gap: isMobile ? 16 : 24,
+                        alignItems: 'start',
+                    }}>
 
                         {/* ── LEFT: FORM ── */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -773,14 +1665,16 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                 </AnimatePresence>
                             </div>
 
-                            {/* Style Selection — Dropdown */}
+                            {/* Style Selection — Animated Dropdown */}
                             <div style={{ backgroundColor: 'white', borderRadius: 24, padding: '20px 24px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
                                 <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#c54444', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 }}>Visual Style</label>
                                 <div style={{ position: 'relative' }}>
-                                    <button
+                                    {/* Trigger button */}
+                                    <motion.button
                                         type="button"
                                         onMouseDown={() => setStyleDropdownOpen(o => !o)}
                                         onBlur={() => setTimeout(() => setStyleDropdownOpen(false), 150)}
+                                        whileTap={{ scale: 0.98 }}
                                         style={{
                                             width: '100%',
                                             display: 'flex',
@@ -788,58 +1682,100 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                             justifyContent: 'space-between',
                                             padding: '12px 16px',
                                             borderRadius: 14,
-                                            border: styleDropdownOpen ? '2px solid #c54444' : '2px solid #e2e8f0',
-                                            background: '#f8fafc',
+                                            border: `2px solid ${styleDropdownOpen ? STYLES.find(s => s.id === infographicStyle)?.color || '#c54444' : '#e2e8f0'}`,
+                                            background: styleDropdownOpen ? (STYLES.find(s => s.id === infographicStyle)?.bg || '#fef2f2') : '#f8fafc',
                                             cursor: 'pointer',
-                                            transition: 'all 0.2s',
+                                            transition: 'all 0.22s ease',
                                             fontFamily: 'inherit',
+                                            outline: 'none',
                                         }}
                                     >
-                                        <div style={{ textAlign: 'left' }}>
-                                            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>{STYLES.find(s => s.id === infographicStyle)?.label}</div>
-                                            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{STYLES.find(s => s.id === infographicStyle)?.desc}</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                            {(() => { const s = STYLES.find(x => x.id === infographicStyle); const IconC = s?.Icon; return IconC ? <span style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:8, background: s.bg, flexShrink:0 }}><IconC size={15} color={s.color} /></span> : null; })()}
+                                            <div style={{ textAlign: 'left' }}>
+                                                <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>{STYLES.find(s => s.id === infographicStyle)?.label}</div>
+                                                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{STYLES.find(s => s.id === infographicStyle)?.desc}</div>
+                                            </div>
                                         </div>
-                                        <ChevronDown size={16} color="#94a3b8" style={{ transform: styleDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }} />
-                                    </button>
-                                    {styleDropdownOpen && (
-                                        <div style={{
-                                            position: 'absolute',
-                                            top: 'calc(100% + 4px)',
-                                            left: 0,
-                                            right: 0,
-                                            background: 'white',
-                                            borderRadius: 14,
-                                            border: '1.5px solid #e2e8f0',
-                                            boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-                                            zIndex: 200,
-                                            overflow: 'hidden',
-                                        }}>
-                                            {STYLES.map((s, i) => {
-                                                const selected = infographicStyle === s.id;
-                                                return (
-                                                    <div
-                                                        key={s.id}
-                                                        onMouseDown={e => {
-                                                            e.preventDefault();
-                                                            setInfographicStyle(s.id);
-                                                            setStyleDropdownOpen(false);
-                                                        }}
-                                                        style={{
-                                                            padding: '11px 16px',
-                                                            background: selected ? '#fef2f2' : 'white',
-                                                            borderBottom: i < STYLES.length - 1 ? '1px solid #f1f5f9' : 'none',
-                                                            cursor: 'pointer',
-                                                        }}
-                                                        onMouseEnter={e => { if (!selected) e.currentTarget.style.background = '#f8fafc'; }}
-                                                        onMouseLeave={e => { if (!selected) e.currentTarget.style.background = 'white'; }}
-                                                    >
-                                                        <div style={{ fontSize: 13, fontWeight: 700, color: selected ? '#c54444' : '#1e293b' }}>{s.label}</div>
-                                                        <div style={{ fontSize: 11, color: selected ? '#ef4444' : '#94a3b8', marginTop: 2 }}>{s.desc}</div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
+                                        <motion.span animate={{ rotate: styleDropdownOpen ? 180 : 0 }} transition={{ duration: 0.22, ease: 'easeInOut' }} style={{ display:'flex', flexShrink:0 }}>
+                                            <ChevronDown size={16} color="#94a3b8" />
+                                        </motion.span>
+                                    </motion.button>
+
+                                    {/* Animated dropdown list */}
+                                    <AnimatePresence>
+                                        {styleDropdownOpen && (
+                                            <motion.div
+                                                key="style-dropdown"
+                                                initial={{ opacity: 0, y: -8, scaleY: 0.92 }}
+                                                animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                                                exit={{ opacity: 0, y: -6, scaleY: 0.94 }}
+                                                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 'calc(100% + 6px)',
+                                                    left: 0,
+                                                    right: 0,
+                                                    background: 'white',
+                                                    borderRadius: 16,
+                                                    border: '1.5px solid #e2e8f0',
+                                                    boxShadow: '0 12px 40px rgba(0,0,0,0.13)',
+                                                    zIndex: 200,
+                                                    overflow: 'hidden',
+                                                    transformOrigin: 'top center',
+                                                }}
+                                            >
+                                                {STYLES.map((s, i) => {
+                                                    const selected = infographicStyle === s.id;
+                                                    const IconC = s.Icon;
+                                                    return (
+                                                        <motion.div
+                                                            key={s.id}
+                                                            initial={{ opacity: 0, x: -6 }}
+                                                            animate={{ opacity: 1, x: 0 }}
+                                                            transition={{ delay: i * 0.045, duration: 0.18, ease: 'easeOut' }}
+                                                            onMouseDown={e => {
+                                                                e.preventDefault();
+                                                                setInfographicStyle(s.id);
+                                                                setStyleDropdownOpen(false);
+                                                            }}
+                                                            style={{
+                                                                padding: '11px 16px',
+                                                                background: selected ? s.bg : 'white',
+                                                                borderBottom: i < STYLES.length - 1 ? '1px solid #f1f5f9' : 'none',
+                                                                borderLeft: selected ? `4px solid ${s.color}` : '4px solid transparent',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: 10,
+                                                                transition: 'background 0.14s, border-left 0.14s',
+                                                            }}
+                                                            onMouseEnter={e => { if (!selected) e.currentTarget.style.background = '#f8fafc'; }}
+                                                            onMouseLeave={e => { if (!selected) e.currentTarget.style.background = 'white'; }}
+                                                        >
+                                                            <span style={{ display:'flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:8, background: selected ? s.bg : '#f1f5f9', flexShrink:0, transition:'background 0.14s' }}>
+                                                                <IconC size={15} color={selected ? s.color : '#94a3b8'} />
+                                                            </span>
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <div style={{ fontSize: 13, fontWeight: 700, color: selected ? s.color : '#1e293b' }}>{s.label}</div>
+                                                                <div style={{ fontSize: 11, color: selected ? s.color + 'aa' : '#94a3b8', marginTop: 2 }}>{s.desc}</div>
+                                                            </div>
+                                                            {selected && (
+                                                                <motion.span
+                                                                    initial={{ scale: 0 }}
+                                                                    animate={{ scale: 1 }}
+                                                                    transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+                                                                    style={{ width:18, height:18, borderRadius:'50%', background: s.color, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}
+                                                                >
+                                                                    <Check size={11} color="white" strokeWidth={3} />
+                                                                </motion.span>
+                                                            )}
+                                                        </motion.div>
+                                                    );
+                                                })}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             </div>
 
@@ -869,49 +1805,49 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                         </div>
 
                         {/* Content area */}
-                        <div style={{ padding: 24, flex: 1, overflowY: 'auto', backgroundColor: '#f3f4f6' }}>
+                        <div style={{ padding: isMobile ? '4px 0' : 24, flex: 1, overflowY: 'auto', backgroundColor: '#f3f4f6' }}>
                             <AnimatePresence mode="wait">
                                 {result ? (
                                     <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
 
                                         {/* 1. TOP: LIVE INFOGRAPHIC PREVIEW + DOWNLOAD */}
-                                        <div style={{ marginBottom: 48 }}>
+                                        <div style={{ marginBottom: isMobile ? 24 : 48 }}>
                                             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                                                <Image size={22} color="#c54444" />
-                                                <h2 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase', letterSpacing: 1.5 }}>AI-Generated Visual</h2>
+                                                <Image size={isMobile ? 18 : 22} color="#c54444" />
+                                                <h2 style={{ fontSize: isMobile ? 15 : 20, fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase', letterSpacing: 1.5 }}>AI-Generated Visual</h2>
                                                 <span style={{ fontSize: 11, fontWeight: 700, color: '#7c3aed', background: '#f3e8ff', border: '1px solid #ddd6fe', borderRadius: 20, padding: '3px 10px', textTransform: 'uppercase', letterSpacing: 0.8 }}>
                                                     {STYLES.find(s => s.id === infographicStyle)?.label || infographicStyle}
                                                 </span>
                                             </div>
                                             {/* Fixed 4:5 LinkedIn portrait ratio */}
-                                            <div style={{ maxWidth: 480, margin: '0 auto', aspectRatio: '4/5', overflow: 'hidden', borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.12)' }}>
+                                            <div style={{ maxWidth: isMobile ? '100%' : 480, margin: '0 auto', aspectRatio: '4/5', overflow: 'hidden', borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.12)' }}>
                                                 <div ref={infographicRef} style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
                                                     <InfographicRenderer content={c} title={formData.title} style={infographicStyle} />
                                                 </div>
                                             </div>
-                                            <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center' }}>
+                                            <div style={{ marginTop: isMobile ? 16 : 24, display: 'flex', justifyContent: 'center' }}>
                                                 <button onClick={() => downloadInfographic(infographicRef, formData.title)}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 36px', borderRadius: 20, border: 'none', background: 'linear-gradient(135deg,#c54444,#a82c2c)', color: 'white', fontSize: 16, fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 25px rgba(197,68,68,0.4)', transition: 'all 0.3s' }}
-                                                    onMouseOver={e => e.currentTarget.style.transform = 'translateY(-3px)'}
-                                                    onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: isMobile ? '13px 24px' : '16px 36px', borderRadius: 20, border: 'none', background: 'linear-gradient(135deg,#c54444,#a82c2c)', color: 'white', fontSize: isMobile ? 14 : 16, fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 25px rgba(197,68,68,0.4)', transition: 'all 0.3s', width: isMobile ? '100%' : 'auto', justifyContent: 'center' }}
+                                                    onMouseOver={e => !isMobile && (e.currentTarget.style.transform = 'translateY(-3px)')}
+                                                    onMouseOut={e => !isMobile && (e.currentTarget.style.transform = 'translateY(0)')}
                                                 >
-                                                    <Download size={22} /> Download Infographic
+                                                    <Download size={isMobile ? 18 : 22} /> Download Infographic
                                                 </button>
                                             </div>
                                         </div>
 
                                         {/* 3. BOTTOM: CLEAN TEXTUAL FLOW */}
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 32, maxWidth: 800, margin: '0 auto' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 32, maxWidth: 800, margin: '0 auto' }}>
 
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: -16 }}>
-                                                <button onClick={copyToClipboard} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '10px 20px', borderRadius: 12, color: '#475569', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }} onMouseOver={e => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.color = '#0f172a' }} onMouseOut={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#475569' }}>
-                                                    {copied ? <Check size={18} color="#10b981" /> : <Copy size={18} />} {copied ? 'Copied' : 'Copy Full Post'}
+                                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: -8 }}>
+                                                <button onClick={copyToClipboard} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', padding: isMobile ? '9px 14px' : '10px 20px', borderRadius: 12, color: '#475569', fontSize: isMobile ? 13 : 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }} onMouseOver={e => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.color = '#0f172a' }} onMouseOut={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#475569' }}>
+                                                    {copied ? <Check size={16} color="#10b981" /> : <Copy size={16} />} {copied ? 'Copied' : 'Copy Post'}
                                                 </button>
                                             </div>
 
-                                            <div style={{ padding: '0 0 24px', borderBottom: '1px solid #e2e8f0' }}>
-                                                <p style={{ fontSize: 13, fontWeight: 800, color: '#b45309', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><Zap size={14} color="#b45309" /> The Hook</p>
-                                                <p style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', margin: 0, lineHeight: 1.4, letterSpacing: '-0.02em' }}>{c?.hook}</p>
+                                            <div style={{ padding: '0 0 20px', borderBottom: '1px solid #e2e8f0' }}>
+                                                <p style={{ fontSize: 12, fontWeight: 800, color: '#b45309', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><Zap size={13} color="#b45309" /> The Hook</p>
+                                                <p style={{ fontSize: isMobile ? 18 : 24, fontWeight: 900, color: '#0f172a', margin: 0, lineHeight: 1.4, letterSpacing: '-0.01em' }}>{c?.hook}</p>
                                             </div>
 
                                             <div style={{ padding: '0 0 24px', borderBottom: '1px solid #e2e8f0' }}>
@@ -930,7 +1866,7 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                                         const prefix  = numM?.[1] || letterM?.[1] || null;
 
                                                         const rowStyle = { display: 'flex', alignItems: 'flex-start', gap: 14, padding: '11px 0', borderBottom: '1px solid #f1f5f9' };
-                                                        const textStyle = { fontSize: 16, color: '#1e293b', lineHeight: 1.65, fontWeight: 450 };
+                                                        const textStyle = { fontSize: isMobile ? 14 : 16, color: '#1e293b', lineHeight: 1.65, fontWeight: 450 };
 
                                                         if (bs === 'numbered' && numM) return (
                                                             <div key={i} style={rowStyle}>
@@ -973,9 +1909,9 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                                 </div>
                                             </div>
 
-                                            <div style={{ padding: '0 0 24px' }}>
-                                                <p style={{ fontSize: 13, fontWeight: 800, color: '#047857', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><Target size={14} color="#047857" /> Call to Action</p>
-                                                <p style={{ fontSize: 18, fontStyle: 'italic', color: '#0f172a', margin: 0, lineHeight: 1.6, fontWeight: 700 }}>{c?.cta}</p>
+                                            <div style={{ padding: '0 0 20px' }}>
+                                                <p style={{ fontSize: 12, fontWeight: 800, color: '#047857', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}><Target size={13} color="#047857" /> Call to Action</p>
+                                                <p style={{ fontSize: isMobile ? 15 : 18, fontStyle: 'italic', color: '#0f172a', margin: 0, lineHeight: 1.6, fontWeight: 700 }}>{c?.cta}</p>
                                             </div>
 
                                             {c?.hashtags?.length > 0 && (
@@ -991,29 +1927,30 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                                 </div>
                                             )}
 
-                                            <div style={{ display: 'flex', justifyContent: 'center', padding: '30px 0' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'center', padding: isMobile ? '16px 0' : '30px 0' }}>
                                                 <button onClick={handleSubmit} disabled={loading}
                                                     style={{
-                                                        minWidth: 280,
+                                                        width: isMobile ? '100%' : 'auto',
+                                                        minWidth: isMobile ? 'unset' : 280,
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
-                                                        gap: 12,
-                                                        padding: '20px 40px',
-                                                        borderRadius: 22,
+                                                        gap: 10,
+                                                        padding: isMobile ? '15px 20px' : '20px 40px',
+                                                        borderRadius: 18,
                                                         border: 'none',
                                                         background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
                                                         color: 'white',
-                                                        fontSize: 16,
+                                                        fontSize: isMobile ? 14 : 16,
                                                         fontWeight: 800,
                                                         cursor: loading ? 'not-allowed' : 'pointer',
                                                         transition: 'all 0.3s ease',
                                                         boxShadow: '0 8px 25px rgba(99,102,241,0.4)'
                                                     }}
-                                                    onMouseOver={e => !loading && (e.currentTarget.style.transform = 'translateY(-3px)', e.currentTarget.style.boxShadow = '0 12px 35px rgba(99,102,241,0.5)')}
-                                                    onMouseOut={e => !loading && (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = '0 8px 25px rgba(99,102,241,0.4)')}
+                                                    onMouseOver={e => !loading && !isMobile && (e.currentTarget.style.transform = 'translateY(-3px)', e.currentTarget.style.boxShadow = '0 12px 35px rgba(99,102,241,0.5)')}
+                                                    onMouseOut={e => !loading && !isMobile && (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = '0 8px 25px rgba(99,102,241,0.4)')}
                                                 >
-                                                    <RefreshCw size={22} className={loading ? 'animate-spin' : ''} />
+                                                    <RefreshCw size={isMobile ? 18 : 22} className={loading ? 'animate-spin' : ''} />
                                                     {loading ? 'Generating...' : 'Craft Another Masterpiece'}
                                                 </button>
                                             </div>
@@ -1021,7 +1958,7 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                                     </motion.div>
                                 ) : (
                                     /* Empty/Loading */
-                                    <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 500 }}>
+                                    <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: isMobile ? 300 : 500 }}>
                                         {loading ? (
                                             <div style={{ textAlign: 'center' }}>
                                                 <div style={{ width: 70, height: 70, border: '5px solid #f8e6e6', borderTopColor: '#c54444', borderRadius: '50%', animation: 'spin 1.2s linear infinite', margin: '0 auto 24px' }} />
@@ -1047,7 +1984,14 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                 </div>
             </main>
 
-            <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} } * { box-sizing: border-box; }`}</style>
+            <style>{`
+                @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+                * { box-sizing: border-box; }
+                input, textarea, select, button { box-sizing: border-box; }
+                @media (max-width: 767px) {
+                    input[type="text"], textarea { font-size: 16px !important; }
+                }
+            `}</style>
         </div>
     );
 }

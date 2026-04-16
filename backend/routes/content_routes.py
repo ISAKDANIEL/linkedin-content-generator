@@ -15,6 +15,8 @@ ALLOWED_TONES = {
 }
 ALLOWED_STYLES = {
     "Whiteboard", "Corporate Modern", "Executive Guide", "Handwritten Notes",
+    "Minimalist", "Timeline", "Checklist", "Step-by-Step", "Comparison Table",
+    "Flowchart", "Statistics", "Roadmap", "Problem-Solution",
 }
 
 
