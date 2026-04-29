@@ -31,24 +31,24 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto bg-white/80 backdrop-blur-md sticky top-0 z-50 rounded-b-2xl border-b border-slate-200 shadow-sm"
+                className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto bg-white/80 backdrop-blur-md sticky top-0 z-50 rounded-b-2xl border-b border-slate-200 shadow-sm"
             >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                     <Logo size="medium" />
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                     {!isAuthenticated && (
                         <button
                             onClick={() => navigate('/login')}
-                            className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full text-slate-700 border border-slate-200 hover:bg-slate-100 transition-colors"
+                            className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-full text-slate-700 border border-slate-200 hover:bg-slate-100 transition-colors"
                         >
-                            <LogIn size={15} /> Sign In
+                            <LogIn size={15} /> <span className="hidden sm:inline">Sign In</span>
                         </button>
                     )}
                     <button
                         onClick={goToApp}
-                        className="text-sm font-semibold px-5 py-2.5 rounded-full bg-rose-800 text-white hover:bg-rose-900 transition-colors shadow-md hover:shadow-lg flex items-center gap-1.5"
+                        className="text-xs sm:text-sm font-semibold px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-rose-800 text-white hover:bg-rose-900 transition-colors shadow-md hover:shadow-lg flex items-center gap-1.5"
                     >
                         {isAuthenticated ? 'Open App' : 'Get Started'} <ArrowRight size={15} />
                     </button>
@@ -56,14 +56,14 @@ export default function LandingPage() {
             </motion.nav>
 
             {/* ── HERO ── */}
-            <section className="relative flex flex-col items-center text-center px-6 pt-24 pb-20 max-w-5xl mx-auto">
+            <section className="relative flex flex-col items-center text-center px-4 sm:px-6 pt-12 sm:pt-24 pb-12 sm:pb-20 max-w-5xl mx-auto">
 
 
                 <motion.h1
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.1 }}
-                    className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight text-slate-900"
+                    className="text-4xl sm:text-5xl md:text-7xl font-extrabold leading-tight tracking-tight text-slate-900"
                 >
                     Create Viral LinkedIn
                     <br />
@@ -74,10 +74,10 @@ export default function LandingPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.2 }}
-                    className="mt-6 text-xl text-slate-600 max-w-2xl leading-relaxed"
+                    className="mt-6 text-base sm:text-xl text-slate-600 max-w-2xl leading-relaxed"
                 >
                     Stop staring at a blank screen. Get the hook, the post, the infographic,
-                    and the hashtags — all AI-generated, all in one click.
+                    and the hashtags, all AI-generated, all in one click.
                 </motion.p>
 
                 <motion.div
@@ -120,7 +120,7 @@ export default function LandingPage() {
                 </motion.div>
 
                 {/* ── PLATFORM MARQUEE ── */}
-                <div className="mt-24 w-full overflow-hidden relative max-w-6xl mx-auto hover-pause">
+                <div className="mt-16 sm:mt-24 w-full overflow-hidden relative max-w-6xl mx-auto hover-pause">
                     {/* Gradient Fades for edges */}
                     <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none" />
                     <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none" />
@@ -151,23 +151,23 @@ export default function LandingPage() {
             </section>
 
             {/* ── HOW IT WORKS ── */}
-            <section id="how-it-works" className="py-24 max-w-5xl mx-auto px-6 text-center">
+            <section id="how-it-works" className="py-16 sm:py-24 max-w-5xl mx-auto px-4 sm:px-6 text-center">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="mb-16"
+                    className="mb-12 sm:mb-16"
                 >
-                    <h2 className="text-4xl font-extrabold text-slate-900 mb-4">3 Steps. That's it.</h2>
-                    <p className="text-slate-600 text-lg">Seriously, it cannot be simpler.</p>
+                    <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">3 Steps. That's it.</h2>
+                    <p className="text-slate-600 text-base sm:text-lg">Seriously, it cannot be simpler.</p>
                 </motion.div>
 
                 <div className="flex flex-col md:flex-row items-start justify-between gap-8 relative">
                     <div className="hidden md:block absolute top-10 left-[10%] right-[10%] h-1 bg-slate-200 -z-10 rounded-full" />
                     {[
-                        { step: '01', title: 'Sign Up Free', desc: 'Create an account with email or Google — no credit card needed.' },
+                        { step: '01', title: 'Sign Up Free', desc: 'Create an account with email or Google. No credit card needed.' },
                         { step: '02', title: 'Enter a Topic', desc: 'Type your post idea and choose your tone and target audience.' },
-                        { step: '03', title: 'Get Magic ✨', desc: 'AI crafts your post, infographic & hashtags — ready to copy & paste.' },
+                        { step: '03', title: 'Get Magic ✨', desc: 'AI crafts your post, infographic & hashtags, ready to copy & paste.' },
                     ].map((item, i) => (
                         <motion.div
                             key={i}
@@ -188,26 +188,26 @@ export default function LandingPage() {
             </section>
 
             {/* ── BOTTOM CTA ── */}
-            <section className="pb-24 px-6 max-w-4xl mx-auto text-center">
+            <section className="pb-16 sm:pb-24 px-4 sm:px-6 max-w-4xl mx-auto text-center">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
-                    className="rounded-3xl p-12 bg-rose-800 text-white shadow-2xl relative overflow-hidden"
+                    className="rounded-3xl p-6 sm:p-12 bg-rose-800 text-white shadow-2xl relative overflow-hidden"
                 >
                     <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-rose-700 rounded-full opacity-50" />
                     <div className="absolute bottom-[-50px] left-[-50px] w-64 h-64 bg-rose-900 rounded-full opacity-50" />
                     <div className="relative z-10">
-                        <h2 className="text-4xl font-extrabold mb-6">Ready to go viral?</h2>
-                        <p className="text-rose-100 mb-10 text-lg max-w-xl mx-auto">
+                        <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 sm:mb-6">Ready to go viral?</h2>
+                        <p className="text-rose-100 mb-8 sm:mb-10 text-base sm:text-lg max-w-xl mx-auto">
                             Join creators who use Make Post to build their LinkedIn presence with high-quality, professional posts.
                         </p>
                         <button
                             onClick={goToApp}
-                            className="px-10 py-4 rounded-full bg-white text-rose-900 font-bold text-lg hover:bg-rose-50 transition-colors shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                            className="w-full sm:w-auto px-8 sm:px-10 py-4 rounded-full bg-white text-rose-900 font-bold text-base sm:text-lg hover:bg-rose-50 transition-colors shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                         >
-                            {isAuthenticated ? 'Open App →' : 'Create My First Post — Free'}
+                            {isAuthenticated ? 'Open App' : 'Create My First Post Free'}
                         </button>
                     </div>
                 </motion.div>

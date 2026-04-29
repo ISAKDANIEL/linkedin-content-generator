@@ -76,7 +76,7 @@ export default function PricingPage() {
         <div className="min-h-screen bg-gradient-to-br from-white via-rose-50 to-white text-slate-900">
 
             {/* Navbar */}
-            <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
+            <nav className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 max-w-6xl mx-auto">
                 <Logo size="medium" />
                 <button
                     onClick={() => navigate(isAuthenticated ? '/generate' : '/')}
@@ -87,19 +87,19 @@ export default function PricingPage() {
             </nav>
 
             {/* Header */}
-            <section className="text-center px-6 pt-12 pb-4 max-w-3xl mx-auto">
+            <section className="text-center px-4 sm:px-6 pt-8 sm:pt-12 pb-4 max-w-3xl mx-auto">
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                    <h1 className="text-5xl font-extrabold leading-tight text-slate-900 mb-4">
+                    <h1 className="text-3xl sm:text-5xl font-extrabold leading-tight text-slate-900 mb-4">
                         Simple, honest pricing
                     </h1>
-                    <p className="text-slate-600 text-lg max-w-xl mx-auto">
-                        Each generation costs <strong>1 credit</strong>. Buy a pack and use it at your own pace — no subscriptions, no surprises.
+                    <p className="text-slate-600 text-base sm:text-lg max-w-xl mx-auto">
+                        Each generation costs <strong>1 credit</strong>. Buy a pack and use it at your own pace. No subscriptions, no surprises.
                     </p>
                 </motion.div>
             </section>
 
             {/* Plans */}
-            <section className="px-6 py-16 max-w-4xl mx-auto">
+            <section className="px-4 sm:px-6 py-10 sm:py-16 max-w-4xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                     {PLANS.map((plan, i) => (
                         <motion.div
@@ -108,10 +108,11 @@ export default function PricingPage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: i * 0.1 }}
                             whileHover={{ y: -8, scale: 1.02 }}
+                            className="p-6 sm:p-8"
                             style={{
                                 position: 'relative', borderRadius: 28,
                                 border: `2px solid ${plan.highlight ? plan.color : '#e2e8f0'}`,
-                                padding: 32, display: 'flex', flexDirection: 'column', gap: 24,
+                                display: 'flex', flexDirection: 'column', gap: 24,
                                 background: 'white',
                                 boxShadow: plan.highlight ? `0 8px 30px ${plan.color}30` : '0 4px 20px rgba(0,0,0,0.06)',
                                 cursor: 'pointer',
@@ -166,7 +167,7 @@ export default function PricingPage() {
                             >
                                 {loadingPlanId === plan.product_id
                                     ? <><Loader2 size={18} className="animate-spin" /> Creating checkout...</>
-                                    : <><CreditCard size={18} /> Get {plan.credits} Credits — ₹{plan.price}</>
+                                    : <><CreditCard size={18} /> Get {plan.credits} Credits, ₹{plan.price}</>
                                 }
                             </button>
                         </motion.div>
@@ -180,7 +181,7 @@ export default function PricingPage() {
                 <div className="flex flex-col gap-5">
                     {[
                         { q: 'What counts as 1 credit?', a: 'Every time you click "Generate Masterpiece" and get a post + infographic, it uses 1 credit.' },
-                        { q: 'Do credits expire?', a: 'No. Credits are yours forever — use them whenever you want.' },
+                        { q: 'Do credits expire?', a: 'No. Credits are yours forever. Use them whenever you want.' },
                         { q: 'Can I get a refund?', a: 'Unused credits can be refunded within 14 days. Contact support.' },
                         { q: 'Do I get free credits?', a: 'Yes! Every new account starts with 3 free credits so you can try before you buy.' },
                     ].map((item, i) => (

@@ -29,7 +29,7 @@ function StatCard({ icon: Icon, label, value, color }) {
                     {label}
                 </p>
                 <p style={{ fontSize: 26, fontWeight: 900, color: '#0f172a', lineHeight: 1.2 }}>
-                    {value ?? '—'}
+                    {value ?? '-'}
                 </p>
             </div>
         </div>
@@ -65,7 +65,7 @@ function CreditsModal({ user, onClose, onSave }) {
                     Update Credits
                 </h3>
                 <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
-                    {user.email} — current: <strong>{user.credits}</strong>
+                    {user.email} (current: <strong>{user.credits}</strong>)
                 </p>
 
                 <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -181,7 +181,7 @@ export default function AdminPage() {
         }
     };
 
-    const fmtDate = (s) => s ? new Date(s).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+    const fmtDate = (s) => s ? new Date(s).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '-';
 
     const filteredUsers = users.filter(u =>
         !search || u.email?.toLowerCase().includes(search.toLowerCase()) || u.name?.toLowerCase().includes(search.toLowerCase())
@@ -350,7 +350,7 @@ export default function AdminPage() {
                                                     <span style={{ marginLeft: 6, background: '#6366f1', color: 'white', fontSize: 10, fontWeight: 800, padding: '1px 6px', borderRadius: 4 }}>ADMIN</span>
                                                 )}
                                             </td>
-                                            <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>{u.name || '—'}</td>
+                                            <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>{u.name || '-'}</td>
                                             <td style={{ padding: '12px 16px' }}>
                                                 <span style={{
                                                     fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 6,
@@ -476,10 +476,10 @@ export default function AdminPage() {
                                             </td>
                                             <td style={{ padding: '12px 16px' }}>
                                                 <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: '#f0f9ff', color: '#0369a1' }}>
-                                                    {h.tone || '—'}
+                                                    {h.tone || '-'}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '12px 16px', fontSize: 12, color: '#64748b' }}>{h.audience || '—'}</td>
+                                            <td style={{ padding: '12px 16px', fontSize: 12, color: '#64748b' }}>{h.audience || '-'}</td>
                                             <td style={{ padding: '12px 16px', fontSize: 12, color: '#94a3b8' }}>{fmtDate(h.created_at)}</td>
                                         </tr>
                                     ))}

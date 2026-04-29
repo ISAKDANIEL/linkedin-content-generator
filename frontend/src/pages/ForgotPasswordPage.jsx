@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
                     </div>
                     <h1 className="text-3xl font-extrabold text-slate-900">Forgot password?</h1>
                     <p className="text-slate-500 mt-2 text-sm">
-                        No worries — we'll send you a reset link.
+                        No worries, we'll send you a reset link.
                     </p>
                 </div>
 
@@ -112,7 +112,7 @@ export default function ForgotPasswordPage() {
                             </p>
                             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-left">
                                 <p className="text-xs text-amber-800 font-semibold mb-1">No email service configured?</p>
-                                <p className="text-xs text-amber-700">Check your backend terminal — the reset link is printed there.</p>
+                                <p className="text-xs text-amber-700">Check your backend terminal. The reset link is printed there.</p>
                             </div>
                             <button
                                 onClick={() => navigate('/login')}

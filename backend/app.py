@@ -1,3 +1,10 @@
+import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+except Exception:
+    pass
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv

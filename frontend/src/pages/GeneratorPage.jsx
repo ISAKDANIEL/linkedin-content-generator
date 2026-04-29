@@ -38,7 +38,7 @@ async function downloadInfographic(ref, title) {
         toast.success(`Downloaded as "${filename}"!`, { id: 'dl' });
     } catch (err) {
         console.error('Download error:', err);
-        toast.error('Download failed — try again', { id: 'dl' });
+        toast.error('Download failed. Try again', { id: 'dl' });
     }
 }
 
@@ -1367,7 +1367,7 @@ export default function GeneratorPage() {
         { id: 'Flowchart',        label: 'Flowchart',          Icon: GitBranch,    desc: 'Decision flow & logic paths',   color: '#4f46e5', bg: '#eef2ff' },
         { id: 'Statistics',       label: 'Statistics',         Icon: BarChart2,    desc: 'Bold numbers & data story',     color: '#059669', bg: '#ecfdf5' },
         { id: 'Roadmap',          label: 'Roadmap',            Icon: Map,          desc: 'Phased milestones & goals',     color: '#d97706', bg: '#fffbeb' },
-        { id: 'Problem-Solution', label: 'Problem–Solution',   Icon: Lightbulb,    desc: 'Pain points vs. fixes',         color: '#dc2626', bg: '#fef2f2' },
+        { id: 'Problem-Solution', label: 'Problem-Solution',   Icon: Lightbulb,    desc: 'Pain points vs. fixes',         color: '#dc2626', bg: '#fef2f2' },
     ];
 
     const TONES = ['Professional', 'Casual', 'Inspirational', 'Educational', 'Humorous', 'Formal', 'Conversational', 'Storytelling', 'Data-Driven', 'Motivational'];
@@ -1455,7 +1455,7 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                 }
                 window.__refreshSidebar?.();
                 toast.success('Infographic & content generated!');
-            } else { toast.error('Generation failed — check the backend.'); }
+            } else { toast.error('Generation failed. Check the backend.'); }
         } catch (err) {
             // Handle no credits error from backend
             if (err.message?.includes('no credits') || err.message?.includes('No credits') || err.status === 402) {
@@ -1789,14 +1789,14 @@ ${(c.hashtags || []).map(t => typeof t === 'string' && !t.startsWith('#') ? '#' 
                             <div style={{ textAlign: 'center' }}>
                                 {credits === null ? null : credits < 1 ? (
                                     <button onClick={() => navigate('/pricing')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#ef4444', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                        <Zap size={13} /> No credits left — Buy more
+                                        <Zap size={13} /> No credits left. Buy more
                                     </button>
                                 ) : (
                                     <p style={{ fontSize: 12, color: credits <= 3 ? '#f59e0b' : '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                                         <Zap size={12} /> {credits} credit{credits !== 1 ? 's' : ''} remaining
                                         {credits <= 3 && (
                                             <button onClick={() => navigate('/pricing')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c54444', fontWeight: 700, fontSize: 12, marginLeft: 4 }}>
-                                                — Top up
+                                                Top up
                                             </button>
                                         )}
                                     </p>
